@@ -1,73 +1,191 @@
-# TwoFlow – Live Talk & Shared Notes with Recording
+# 🚀 Jikanflow – Unified Productivity System for Freelancers & Creators
 
-TwoFlow is a web application designed for live discussions and collaborative note-taking. It allows users to create rooms where they can engage in real-time conversations, share notes, and record their sessions for later reference.
+> 🧠 Manage tasks, track time, take notes, and receive reminders — all in one place.
 
-## Planning and Design
+---
 
-### Tools and Tecnologies
+## ✨ Project Overview
 
-- **ServiceType**: Microservice
+**Jikanflow** is a modular productivity tool designed for freelancers and solo creators. It combines essential features like:
 
-- **Frontend**: Next.js, Tailwind CSS, Socket.IO, Quilljs, WebRTC, Typescript
-- **Backend**: Express.js, Socket.IO, Spring Boot
-- **Database**: PostgreSQL
-- **Authentication**: JWT (JSON Web Tokens)
-- **Requests**: RESTFUL API, GRPC
-- **Deployment**: Docker, AWS
+- ✅ Project-based to-do management (Kanban-style drag & drop)
+- ⏱️ Time tracking per task
+- 📝 Notes per task
+- 🔔 Smart reminders via email
+- 📦 Microservice architecture with Spring Boot
+- 🐇 RabbitMQ for async communication
 
-### WorkFlow
+---
 
-### High-Level Architecture
+## 📸 Demo Preview
 
-1. **Authentication**: Users register/login using JWT for secure access.
-2. **Room Management**: Each room supports two users with a unique ID.
-3. **Live Communication**: Real-time video/audio via WebRTC and Socket.IO.
-4. **Collaborative Notes**: Both users share and edit notes live with Quill.js.
-5. **Recording**: Sessions can be recorded and stored for later viewing.
-6. **Storage**: Notes and recordings are stored in PostgreSQL and cloud storage.
+<!-- Add screenshots or Loom video demo here -->
+Coming soon...
 
-### Low-Level Architecture
+---
 
-**Video Service**: Handles video recording
+## 🏗 Architecture
 
-- Frontend sends an HTTP request to the main server for user validation, and if the validation is successful, the main server will send a  GRPC request to the video service to start recording.
-- The video is recorded and sends as small chunks to the video service for storing in cloud storage.
-- The video service will send a response to the main server with the video URL and success message with GRPC.
-- The main server will send a response to the frontend with the video URL and success message.
+```plaintext
+                                +---------------------+
+                                |     Frontend UI     |
+                                |  (React + DnD)     |
+                                +----------+----------+
+                                           |
+                                           v
+                   +-----------------------+-----------------------+
+                   |                                               |
+        +----------v----------+                         +----------v----------+
+        |   core-service       |                         |   notify-service     |
+        | Spring Boot + JPA    |                         | Spring Boot + Rabbit |
+        | Handles:             |                         | Sends reminders,     |
+        | - Auth (JWT)         |                         | listens to RabbitMQ  |
+        | - Projects, Tasks    |                         +----------------------+
+        | - Notes, Time Logs   |
+        +----------+-----------+
+                   |
+         PostgreSQL (shared DB)
 
-**Note Service**: Handles note creation and sharing
+```
 
-- Frontend sends an HTTP request to the main server for user validation, and if the validation is successful(Only for both users validation are successfull), the main server will send a GRPC request to the note service to create a new note.
-- The note service will create the note and send a response back to the main server with the note ID and success message.
-- The users can then edit the note in real-time using Quill.js and updated on database through note service.
-- The main server will send a response to the frontend with the note ID and success message.
+## Folder Structure
 
-## Here’s what I need to do before starting programming
+trackflow/
+├── client/                  # React frontend
+├── services/
+│   ├── core-service/        # Auth, Projects, Tasks, Notes, TimeLogs
+│   └── notify-service/      # CRON scheduler, email/push notifier
+├── shared/                  # Shared DTOs, types
+├── docker-compose.yml       # Orchestration
+└── README.md
 
-### Define your MVP scope clearly
+## Features and Modules
 
-- **Pick the absolute essential features first — e.g.,**
+| Feature         | Tech / Library                               |
+| --------------- | -------------------------------------------- |
+| 🧾 Task Kanban  | [`@dnd-kit`](https://dndkit.com/) in Next.js |
+| 🧩 Auth         | Spring Security + JWT                        |
+| 📝 Notes        | Markdown input / Rich Text (Tiptap optional) |
+| ⏱ Time Tracking | Task Timer + Backend Logs                    |
+| 🔔 Reminders    | Scheduled with Spring `@Scheduled`, RabbitMQ |
+| 💾 DB           | PostgreSQL                                   |
+| 📨 Messaging    | RabbitMQ (`spring-boot-starter-amqp`)        |
+| 🐳 DevOps       | Docker Compose, GitHub Actions (optional)    |
 
-1. User auth & room creation
+## ⚙️ Technologies Used
 
-2. Real-time talk + basic note collaboration
+**Frontend**:
 
-3. Simple recording start/stop with storage
+- React 18
 
-- This keeps initial work focused and manageable.
+- Tailwind CSS
 
-### Sketch a simple API contract / gRPC proto files
+- Zustand
 
-- **Define the inputs/outputs your services will use. This will avoid guesswork later.**
+- @dnd-kit – for drag-and-drop
 
-### Set up your dev environment and project structure
+**Backend**:
 
-- **Get Next.js + Express + Spring Boot repos ready and connected.**
+- Spring Boot 3+
 
-### Plan basic data models
+- Spring Security + JWT
 
-- **E.g., User, Room, Note, Recording — with minimal fields to start.**
+- Spring Data JPA
 
-### Design a minimal UI flow
+- RabbitMQ
 
-- **Rough wireframes or a checklist for frontend pages/components.**
+- PostgreSQL
+
+**DevOps**:
+
+- Docker
+
+- Docker Compose
+
+## 🗃️ Database Schema (ERD)
+
+Handled via PostgreSQL. Sample entities:
+
+1. User: id, name, email, passwordHash, role
+
+2. Project: id, user_id, name, description
+
+3. Task: id, project_id, title, status, estimate
+
+4. TimeLog: id, task_id, start_time, end_time, duration
+
+5. Note: id, project_id, content, created_at, task_id
+
+6. Reminder: id, user_id, message, scheduled_time, sent
+
+## API Design
+
+**Auth**:
+POST /api/auth/signup
+POST /api/auth/login
+GET /api/user/profile
+
+**Projects**:
+GET /api/projects
+POST /api/projects
+GET /api/projects/{id}
+PUT /api/projects/{id}
+DELETE /api/projects/{id}
+
+**Tasks**:
+POST /api/projects/{id}/tasks
+PATCH /api/tasks/{id}/status
+POST /api/tasks/{id}/start-timer
+POST /api/tasks/{id}/stop-timer
+
+**Notes**:
+GET /api/projects/{id}/notes
+POST /api/projects/{id}/notes
+
+**Reminders**:
+POST /api/reminders
+RabbitMQ → trigger email via notify-service
+
+## 📈 Roadmap (Sprint-wise)
+
+**✅ Sprint 1: Core Setup**:
+
+- Docker Compose (Postgres, RabbitMQ, services)
+
+- Spring Boot boilerplates
+
+- React.js UI + auth setup
+
+**✅ Sprint 2: Projects + Tasks**:
+
+- Drag-and-drop Kanban board
+
+- API integration
+
+- Task status updates
+
+**✅ Sprint 3: Time Tracking + Notes**:
+
+- Timer logic + backend logs
+
+- Notes module per task
+
+**✅ Sprint 4: Reminders + Notification Service**:
+
+- Reminder DB + message queue
+
+- Spring CRON + Email sender
+
+**✅ Sprint 5: Final Touches**:
+
+- AI (optional)
+
+- Dashboard UI polish
+
+## 🛡 Security & Roles
+
+**JWT Authentication**:
+
+- Role-based access (user, admin)
+
+- Client isolation
