@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { CalendarDays, Clock4, StickyNote } from 'lucide-react';
+import { CalendarDays, Clock4, StickyNote, Eye } from 'lucide-react';
 
 interface Props {
     task: {
@@ -11,8 +11,8 @@ interface Props {
         notes: number;
         due: string;
         priority: string;
-        id: number
-    }
+        id: number;
+    };
 }
 
 function TaskList({ task }: Props) {
@@ -29,38 +29,52 @@ function TaskList({ task }: Props) {
             {...attributes}
             {...listeners}
             style={style}
-            className="bg-white px-3 py-3 border-b border-gray-200 hover:border-blue-500 transition"
+            className="group bg-white rounded-lg shadow-md px-4 py-3 border border-gray-200 hover:shadow-lg transition cursor-pointer"
         >
-            <div
-                key={task.id}
-                className="bg-white px-3 py-3 border-b border-gray-200 hover:border-blue-500 transition"
-            >
-                <div className="flex justify-between items-center mb-1">
-                    <h4 className="font-medium text-sm text-gray-800">
+            {/* Header */}
+            <div className="flex justify-between items-start">
+                <div>
+                    <h4 className="font-semibold text-gray-800 text-base mb-1">
                         {task.title}
                     </h4>
-                    <span className={`w-2 h-2 rounded-full ${task.color}`} />
+                    <p className="text-sm text-gray-500 line-clamp-2">{task.desc}</p>
                 </div>
-                <p className="text-xs text-gray-500 mb-1">{task.desc}</p>
-                <div className="flex justify-between text-xs text-gray-500 mt-2">
-                    <div className="flex items-center gap-1">
-                        <Clock4 className="w-4 h-4" />
+                <span
+                    className={`w-3 h-3 mt-1 rounded-full ${task.color}`}
+                    title="Status indicator"
+                />
+            </div>
+
+            {/* Info Rows */}
+            <div className="mt-3 space-y-1 text-sm text-gray-600">
+                <div className="flex justify-between">
+                    <span className="flex items-center gap-1">
+                        <Clock4 className="w-4 h-4 text-blue-400" />
                         {task.time}
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <StickyNote className="w-4 h-4" />
+                    </span>
+                    <span className="flex items-center gap-1">
+                        <StickyNote className="w-4 h-4 text-yellow-400" />
                         {task.notes}
-                    </div>
+                    </span>
                 </div>
-                <div className="flex justify-between text-xs text-gray-400 mt-1">
-                    <div className="flex items-center gap-1">
-                        <CalendarDays className="w-4 h-4" />
+                <div className="flex justify-between text-xs text-gray-500">
+                    <span className="flex items-center gap-1">
+                        <CalendarDays className="w-4 h-4 text-purple-400" />
                         {task.due}
-                    </div>
-                    <span className="italic">{task.priority}</span>
+                    </span>
+                    <span className="italic text-right">{task.priority}</span>
                 </div>
+            </div>
+
+            {/* Action */}
+            <div className="mt-4">
+                <button className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 transition">
+                    <Eye className="w-4 h-4" />
+                    View Details
+                </button>
             </div>
         </div>
     );
 }
+
 export default TaskList;

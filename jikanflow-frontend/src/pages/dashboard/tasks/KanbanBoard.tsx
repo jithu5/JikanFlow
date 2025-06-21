@@ -3,12 +3,11 @@ import {
     Kanban,
     PlusCircle,
 } from "lucide-react";
-import { Dialog } from "@headlessui/react";
 import { DndContext, PointerSensor, useSensor, useSensors, closestCorners,type DragEndEvent, type DragOverEvent, type DragStartEvent, DragOverlay } from "@dnd-kit/core";
 import Tasks from "./Tasks";
+import AddTask from "./AddTask";
 
-// Types
-interface IForm {
+export interface IForm {
     title: string;
     desc: string;
     status: string;
@@ -82,15 +81,106 @@ function KanbanBoard() {
     };
 
     const handleDragStart = (event: DragStartEvent) => {
-        console.log(event)
-    };
-    const handleDragOver = (event: DragOverEvent) => {
-        console.log(event)
+        const { active } = event;
+
+        // Find the task by ID
+        for (const status in tasks) {
+            const found = tasks[status].find((task) => task.id === active.id);
+            if (found) {
+                setActiveTask({ ...found, status });
+                break;
+            }
+        }
     };
 
+    const handleDragOver = (event: DragOverEvent) => {
+        const { active, over } = event;
+        if (!active || !over || !activeTask) return;
+        console.log(over)
+        const fromColumnStatus = activeTask.status;
+        const task = over.id.toString();
+        let toColumnTask: ITask | undefined;
+        let toColumnStatus: string | undefined;
+        for (const status in tasks) {
+            const found = tasks[status].find(t => t.id === Number(task));
+            if (found) {
+                toColumnTask = found;
+                toColumnStatus = status;
+                break;
+            }
+        }
+
+        // Skip if it's not a valid column
+        if (!toColumnStatus || !tasks[toColumnStatus]) return;
+
+        if (fromColumnStatus !== toColumnStatus) {
+            setTasks((prev) => {
+                const newTasks: TaskMap = { ...prev };
+
+                // ✅ Double-check if the target column exists
+                if (!newTasks[toColumnStatus]) newTasks[toColumnStatus] = [];
+
+                const alreadyExists = newTasks[toColumnStatus].some((t) => t.id === active.id);
+                if (alreadyExists) return prev;
+
+                // Remove from old column
+                newTasks[fromColumnStatus] = newTasks[fromColumnStatus].filter((t) => t.id !== active.id);
+
+                // Temporarily add to new column
+                newTasks[toColumnStatus] = [...newTasks[toColumnStatus], { ...activeTask, status: toColumnStatus }];
+
+                return newTasks;
+            });
+            console.log(toColumnTask,fromColumnStatus)
+            setActiveTask({ ...activeTask, status: toColumnStatus });
+        }
+    };
+    
+
     const handleDragEnd = (event: DragEndEvent) => {
-        console.log(event)
-    }; 
+        const { active, over } = event;
+        if (!over || !activeTask) return;
+
+        const fromColumn = activeTask.status;
+        let toColumn: string | undefined;
+
+        // 1. Figure out which column the task was dropped into
+        for (const status in tasks) {
+            const found = tasks[status].some((t) => t.id === Number(over.id));
+            if (found) {
+                toColumn = status;
+                break;
+            }
+        }
+
+        if (!toColumn || !tasks[toColumn]) {
+            setActiveTask(null);
+            return;
+        }
+        console.log('hey')
+        // 2. If no change in column, exit early
+        if (fromColumn === toColumn) {
+            setActiveTask(null);
+            return;
+        }
+        console.log('heeey')
+
+        // 3. Move task to new column
+        setTasks((prev) => {
+            const newTasks: TaskMap = { ...prev };
+
+            // Remove from old column
+            newTasks[fromColumn] = newTasks[fromColumn].filter((t) => t.id !== active.id);
+
+            // Add to new column
+            newTasks[toColumn!] = [...newTasks[toColumn!], { ...activeTask, status: toColumn! }];
+
+            return newTasks;
+        });
+        console.log(toColumn,fromColumn)
+        setActiveTask(null);
+    };
+    
 
     return (
         <div className="p-4 md:p-6 bg-white min-h-screen relative">
@@ -125,19 +215,7 @@ function KanbanBoard() {
                 </div>
                 <DragOverlay>
                     {activeTask ? (
-                        <div className="bg-white p-4 rounded shadow-lg border border-gray-200">
-                            <h4 className="font-medium text-sm text-gray-800">{activeTask.title}</h4>
-                            <p className="text-xs text-gray-500">{activeTask.desc}</p>
-                            <div className="flex justify-between text-xs text-gray-500 mt-2">
-                                <div className="flex items-center gap-1">
-                                
-                                    {activeTask.time}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <span className="w-2 h-2 bg-gray-300 rounded-full"></span>
-                                    {activeTask.notes}
-                                </div>
-                            </div>
+                        <div className="bg-white p-4 rounded shadow-lg border border-rose-600 opacity-50 h-24 w-full">  
                         </div>
                     ) : null}
                 </DragOverlay>
@@ -153,50 +231,14 @@ function KanbanBoard() {
             </button>
 
             {/* Modal for Adding Task */}
-            <Dialog open={isOpen} onClose={() => setIsOpen(false)} className="fixed z-50 inset-0">
-                <div className="flex items-center justify-center min-h-screen bg-black/30 px-4">
-                    <Dialog.Panel className="bg-white p-6 rounded-lg w-full max-w-md space-y-4">
-                        <Dialog.Title className="text-lg font-bold">Add Task</Dialog.Title>
-                        <div className="space-y-2">
-                            <input
-                                type="text"
-                                placeholder="Title"
-                                value={form.title}
-                                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                                className="w-full px-3 py-2 border rounded"
-                            />
-                            <textarea
-                                placeholder="Description"
-                                value={form.desc}
-                                onChange={(e) => setForm({ ...form, desc: e.target.value })}
-                                className="w-full px-3 py-2 border rounded"
-                            />
-                            <select
-                                value={form.status}
-                                onChange={(e) => setForm({ ...form, status: e.target.value })}
-                                className="w-full px-3 py-2 border rounded"
-                            >
-                                {columns.map((col) => (
-                                    <option key={col.title} value={col.title}>
-                                        {col.title}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="flex justify-end gap-2">
-                            <button onClick={() => setIsOpen(false)} className="text-gray-500">
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleAddTask}
-                                className="bg-blue-600 text-white px-4 py-2 rounded"
-                            >
-                                Add
-                            </button>
-                        </div>
-                    </Dialog.Panel>
-                </div>
-            </Dialog>
+            <AddTask
+                isOpen={isOpen}
+                setIsOpen={setIsOpen}
+                form={form}
+                setForm={setForm}
+                handleAddTask={handleAddTask}
+                columns={columns}
+            />
         </div>
     );
 }
