@@ -17,7 +17,9 @@
 
 ---
 
-## 📸 Demo Preview
+## 📸 DB Design
+
+![Database Design](./img/jikanflowdb1.png)
 
 <!-- Add screenshots or Loom video demo here -->
 Coming soon...
