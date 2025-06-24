@@ -12,6 +12,7 @@ interface Props {
         due: string;
         priority: string;
         id: number;
+        status:string
     };
 }
 
@@ -29,7 +30,7 @@ function TaskList({ task }: Props) {
             {...attributes}
             {...listeners}
             style={style}
-            className="group bg-white rounded-lg shadow-md px-4 py-3 border border-gray-200 hover:shadow-lg transition cursor-pointer"
+            className="group bg-white rounded-lg shadow-md px-4 py-3 border border-gray-200 hover:shadow-lg transition cursor-grabbing"
         >
             {/* Header */}
             <div className="flex justify-between items-start">
@@ -68,7 +69,7 @@ function TaskList({ task }: Props) {
 
             {/* Action */}
             <div className="mt-4">
-                <button className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 transition">
+                <button className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 transition cursor-pointer">
                     <Eye className="w-4 h-4" />
                     View Details
                 </button>

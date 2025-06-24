@@ -27,7 +27,6 @@ export type TaskMap = {
 
 function KanbanBoard() {
     const [activeTask, setActiveTask] = useState<ITask | null>(null);
-    const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -82,6 +81,7 @@ function KanbanBoard() {
 
     const handleDragStart = (event: DragStartEvent) => {
         const { active } = event;
+        console.log(active)
 
         // Find the task by ID
         for (const status in tasks) {
@@ -96,90 +96,124 @@ function KanbanBoard() {
     const handleDragOver = (event: DragOverEvent) => {
         const { active, over } = event;
         if (!active || !over || !activeTask) return;
-        console.log(over)
+
         const fromColumnStatus = activeTask.status;
-        const task = over.id.toString();
-        let toColumnTask: ITask | undefined;
+
         let toColumnStatus: string | undefined;
+        let toTaskIndex: number | null = null;
+
+        // ✅ Now over.id can be either a task ID or a column title (if empty column)
+        // Try to match task first
         for (const status in tasks) {
-            const found = tasks[status].find(t => t.id === Number(task));
+            const found = tasks[status].find(t => t.id === Number(over.id));
             if (found) {
-                toColumnTask = found;
                 toColumnStatus = status;
                 break;
             }
         }
 
-        // Skip if it's not a valid column
-        if (!toColumnStatus || !tasks[toColumnStatus]) return;
-
-        if (fromColumnStatus !== toColumnStatus) {
-            setTasks((prev) => {
-                const newTasks: TaskMap = { ...prev };
-
-                // ✅ Double-check if the target column exists
-                if (!newTasks[toColumnStatus]) newTasks[toColumnStatus] = [];
-
-                const alreadyExists = newTasks[toColumnStatus].some((t) => t.id === active.id);
-                if (alreadyExists) return prev;
-
-                // Remove from old column
-                newTasks[fromColumnStatus] = newTasks[fromColumnStatus].filter((t) => t.id !== active.id);
-
-                // Temporarily add to new column
-                newTasks[toColumnStatus] = [...newTasks[toColumnStatus], { ...activeTask, status: toColumnStatus }];
-
-                return newTasks;
-            });
-            console.log(toColumnTask,fromColumnStatus)
-            setActiveTask({ ...activeTask, status: toColumnStatus });
+        // ✅ Fallback to assume it's a column (like empty "TODO")
+        if (!toColumnStatus && tasks[over.id.toString()]) {
+            toColumnStatus = over.id.toString();
         }
+
+        if (!toColumnStatus || fromColumnStatus === toColumnStatus) return;
+
+        setTasks(prev => {
+            const newTasks = { ...prev };
+            const taskToMove = { ...activeTask, status: toColumnStatus! };
+
+            // Remove from old column
+            newTasks[fromColumnStatus] = newTasks[fromColumnStatus].filter(t => t.id !== active.id);
+
+            // Insert into new column
+            newTasks[toColumnStatus!] = [...newTasks[toColumnStatus!], taskToMove];
+
+            return newTasks;
+        });
+
+        setActiveTask({ ...activeTask, status: toColumnStatus });
     };
     
-
+    
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
-        if (!over || !activeTask) return;
+        if (!over || !activeTask) {
+            setActiveTask(null);
+            return;
+        }
 
         const fromColumn = activeTask.status;
         let toColumn: string | undefined;
+        let toIndex: number | null = null;
 
-        // 1. Figure out which column the task was dropped into
+        // Check if dropped on a task
         for (const status in tasks) {
-            const found = tasks[status].some((t) => t.id === Number(over.id));
-            if (found) {
+            const taskIndex = tasks[status].findIndex(t => t.id === Number(over.id));
+            if (taskIndex !== -1) {
                 toColumn = status;
+                toIndex = taskIndex;
                 break;
             }
+        }
+        // If dropped on a column
+        if (!toColumn) {
+            toColumn = over.id.toString();
+            
         }
 
         if (!toColumn || !tasks[toColumn]) {
             setActiveTask(null);
             return;
         }
-        console.log('hey')
-        // 2. If no change in column, exit early
+
+        // Check if reordering in same column
         if (fromColumn === toColumn) {
+            setTasks(prev => {
+                const newTasks = { ...prev };
+                const fromList = [...newTasks[fromColumn]];
+                const taskIndex = fromList.findIndex(t => t.id === active.id);
+                const [movedTask] = fromList.splice(taskIndex, 1);
+
+                // Drop before `toIndex`, or at end if dropped on column
+                if (toIndex !== null) {
+                    fromList.splice(toIndex, 0, movedTask);
+                } else {
+                    fromList.push(movedTask);
+                }
+
+                newTasks[fromColumn] = fromList;
+                return newTasks;
+            });
+            console.log(tasks)
+
             setActiveTask(null);
             return;
         }
-        console.log('heeey')
 
-        // 3. Move task to new column
-        setTasks((prev) => {
-            const newTasks: TaskMap = { ...prev };
+        // If moved to another column
+        setTasks(prev => {
+            const newTasks = { ...prev };
+            const fromList = newTasks[fromColumn].filter(t => t.id !== active.id);
+            const toList = [...newTasks[toColumn!]];
 
-            // Remove from old column
-            newTasks[fromColumn] = newTasks[fromColumn].filter((t) => t.id !== active.id);
+            const newTask = { ...activeTask, status: toColumn! };
 
-            // Add to new column
-            newTasks[toColumn!] = [...newTasks[toColumn!], { ...activeTask, status: toColumn! }];
+            if (toIndex !== null) {
+                toList.splice(toIndex, 0, newTask);
+            } else {
+                toList.push(newTask);
+            }
+
+            newTasks[fromColumn] = fromList;
+            newTasks[toColumn!] = toList;
+            console.log(tasks)
 
             return newTasks;
         });
-        console.log(toColumn,fromColumn)
         setActiveTask(null);
     };
+    
     
 
     return (
@@ -215,10 +249,35 @@ function KanbanBoard() {
                 </div>
                 <DragOverlay>
                     {activeTask ? (
-                        <div className="bg-white p-4 rounded shadow-lg border border-rose-600 opacity-50 h-24 w-full">  
+                        <div className="bg-white border border-blue-500 rounded-xl shadow-xl p-4 w-40 opacity-80 scale-105 transition-transform duration-200">
+                            <div className="flex justify-between items-center mb-2">
+                                <h4 className="font-semibold text-gray-800 text-md truncate">
+                                    {activeTask.title}
+                                </h4>
+                                <span
+                                    className={`text-xs font-semibold px-2 py-1 rounded-full ${activeTask.priority === "High"
+                                            ? "bg-red-100 text-red-600"
+                                            : activeTask.priority === "Low"
+                                                ? "bg-green-100 text-green-600"
+                                                : "bg-yellow-100 text-yellow-600"
+                                        }`}
+                                >
+                                    {activeTask.priority}
+                                </span>
+                            </div>
+                            <p className="text-xs text-gray-500 line-clamp-2">{activeTask.desc}</p>
+                            <div className="flex justify-between items-center mt-3 text-gray-400 text-xs">
+                                <div className="flex items-center gap-1">
+                                    ⏱️ <span>{activeTask.time}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    📝 <span>{activeTask.notes} notes</span>
+                                </div>
+                            </div>
                         </div>
                     ) : null}
                 </DragOverlay>
+
             </DndContext>
 
             {/* Floating Add Task Button */}
