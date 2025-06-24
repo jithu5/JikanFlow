@@ -10,6 +10,9 @@
         <module name="jikanflow" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="jikanflow" target="21" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
