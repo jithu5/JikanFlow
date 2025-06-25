@@ -4,6 +4,15 @@
 
 ---
 
+## ⚠️ Project Status: Under Development
+
+Jikanflow is currently in active development.
+Features, APIs, and internal logic are subject to change — things may break or behave unexpectedly as improvements are made.
+
+We appreciate your interest and welcome feedback, but please note that the system is not yet stable for cloning or testing.
+
+---
+
 ## ✨ Project Overview
 
 **Jikanflow** is a modular productivity tool designed for freelancers and solo creators. It combines essential features like:
