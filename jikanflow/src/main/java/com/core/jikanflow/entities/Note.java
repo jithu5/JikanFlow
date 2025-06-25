@@ -17,20 +17,19 @@ import java.util.UUID;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "projects")
-public class Project {
-
+@Table(name = "notes")
+public class Note {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, length = 100)
-    @Size(max = 100, message = "Title can be at most 100 characters")
-    private String title;
+    @Column(nullable = false, length = 50)
+    @Size(max = 50, message = "Subject can be at most 50 characters")
+    private String subject;
 
-    @Column(length = 1000)
-    @Size(max = 1000, message = "Description can be at most 1000 characters")
-    private String description;
+    @Column(length = 2000)
+    @Size(max = 200, message = "Body can be at most 200 characters")
+    private String body;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -43,6 +42,14 @@ public class Project {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "task_id", nullable = false)
+    private Task task;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id", nullable = false)
+    private Project project;
+
     // Automatically set timestamps
     @PrePersist
     protected void onCreate() {
@@ -54,14 +61,5 @@ public class Project {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
-
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Task> tasks = new ArrayList<>();
-
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Note> notes = new ArrayList<>();
-
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<TimeLog> timeLogs = new ArrayList<>();
 
 }
