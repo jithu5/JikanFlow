@@ -3,4 +3,6 @@ import DashboardLayout from "./dashboard/DashboardLayout";
 import DashboardLanding from "./dashboard/DashboardLanding";
 import KanbanBoard from "./dashboard/tasks/KanbanBoard";
 
-export {LandingPage, DashboardLanding,DashboardLayout,KanbanBoard}
+import Auth from "./Authentication/Auth";
+
+export {LandingPage, DashboardLanding,DashboardLayout,KanbanBoard,Auth}

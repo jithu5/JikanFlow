@@ -1,6 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
 import App from "../App"
-import { DashboardLanding, DashboardLayout, KanbanBoard, LandingPage } from "../pages/index"
+import { Auth, DashboardLanding, DashboardLayout, KanbanBoard, LandingPage } from "../pages/index"
 
 function router() {
   const router = createBrowserRouter([
@@ -27,6 +27,10 @@ function router() {
           element: <KanbanBoard />
         }
       ]
+    },
+    {
+      path:"/api/auth",
+      element:<Auth />
     }
   ])
   return (

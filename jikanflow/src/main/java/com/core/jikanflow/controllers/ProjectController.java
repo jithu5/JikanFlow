@@ -1,14 +1,11 @@
 package com.core.jikanflow.controllers;
 
-import com.core.jikanflow.entities.Project;
 import com.core.jikanflow.requestDTOS.ProjectReqDto;
 import com.core.jikanflow.responseDTOS.ProjectDetailedResDto;
 import com.core.jikanflow.responseDTOS.ProjectResDto;
 import com.core.jikanflow.service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,11 +19,8 @@ public class ProjectController {
 
     private final ProjectService projectService;
 
-    private static final Logger log = LoggerFactory.getLogger(ProjectController.class);
-
     @PostMapping("/create")
     public ResponseEntity<?> createNewProject(@Valid @RequestBody ProjectReqDto newProject){
-        log.info(newProject.toString());
         try {
             ProjectResDto savedProject = projectService.createNewProject(newProject);
             return ResponseEntity.accepted().body(savedProject);
@@ -57,7 +51,6 @@ public class ProjectController {
 
     @DeleteMapping("/delete/{projectId}")
     public ResponseEntity<?> deleteProjectById(@PathVariable UUID projectId){
-        log.info(projectId.toString());
         try {
             projectService.deleteProjectById(projectId);
             return ResponseEntity.ok().body("Deleted successfully");
