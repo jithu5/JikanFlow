@@ -2,6 +2,7 @@ package com.core.jikanflow.controllers;
 
 import com.core.jikanflow.entities.Project;
 import com.core.jikanflow.requestDTOS.ProjectReqDto;
+import com.core.jikanflow.responseDTOS.ProjectDetailedResDto;
 import com.core.jikanflow.responseDTOS.ProjectResDto;
 import com.core.jikanflow.service.ProjectService;
 import jakarta.validation.Valid;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping(path = "/api/main/projects")
@@ -27,7 +29,7 @@ public class ProjectController {
         log.info(newProject.toString());
         try {
             ProjectResDto savedProject = projectService.createNewProject(newProject);
-            return ResponseEntity.ok().body(savedProject);
+            return ResponseEntity.accepted().body(savedProject);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
@@ -38,6 +40,27 @@ public class ProjectController {
         try {
             List<ProjectResDto> projects = projectService.findAllProjects();
             return ResponseEntity.ok().body(projects);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/get/{projectId}")
+    public ResponseEntity<?> getProjectById(@PathVariable UUID projectId){
+        try {
+            ProjectDetailedResDto projects = projectService.findProjectById(projectId);
+            return ResponseEntity.ok().body(projects);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/delete/{projectId}")
+    public ResponseEntity<?> deleteProjectById(@PathVariable UUID projectId){
+        log.info(projectId.toString());
+        try {
+            projectService.deleteProjectById(projectId);
+            return ResponseEntity.ok().body("Deleted successfully");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }

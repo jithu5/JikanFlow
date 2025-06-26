@@ -38,9 +38,8 @@ public class User {
     @NotBlank(message = "Email is mandatory")
     private String email;
 
-    // Java-side default + optional DB default
-    @Column(nullable = false, columnDefinition = "VARCHAR(10) DEFAULT 'FREE'")
-    private String type = "FREE";
+    @Column(length = 10, nullable = false, columnDefinition = "VARCHAR(10) DEFAULT 'FREE'")
+    private String type;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Project> projects = new ArrayList<>();

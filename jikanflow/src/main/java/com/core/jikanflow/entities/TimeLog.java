@@ -20,9 +20,9 @@ public class TimeLog {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    private LocalDateTime start;
+    private LocalDateTime startTime;
 
-    private LocalDateTime end;
+    private LocalDateTime endTime;
 
     private long duration;
 
