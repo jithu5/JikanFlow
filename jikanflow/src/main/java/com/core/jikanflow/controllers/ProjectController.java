@@ -59,4 +59,14 @@ public class ProjectController {
         }
     }
 
+    @PostMapping("{projectId}/{userId}")
+    public ResponseEntity<?> addNewMember(@PathVariable UUID projectId, @PathVariable UUID userId){
+        try {
+            projectService.addNewMember(projectId,userId);
+            return ResponseEntity.accepted().body("User added to the project successfully");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
 }

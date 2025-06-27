@@ -41,8 +41,18 @@ public class User {
     @Column(length = 10, nullable = false, columnDefinition = "VARCHAR(10) DEFAULT 'FREE'")
     private String type;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @PrePersist
+    public void ensureDefaultType() {
+        if (this.type == null) {
+            this.type = "FREE";
+        }
+    }
+
+    @ManyToMany(mappedBy = "users")
     private List<Project> projects = new ArrayList<>();
+
+    @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Project> createdProject = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Task> tasks = new ArrayList<>();

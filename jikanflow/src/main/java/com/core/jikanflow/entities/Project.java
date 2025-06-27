@@ -38,12 +38,10 @@ public class Project {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // 👇 This is the foreign key: user_id → users.id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "created_by",nullable = false)
+    private User createdBy;
 
-    // Automatically set timestamps
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -55,6 +53,14 @@ public class Project {
         this.updatedAt = LocalDateTime.now();
     }
 
+    @ManyToMany
+    @JoinTable(
+            name = "user_projects",
+            joinColumns = @JoinColumn(name = "project_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    private List<User> users = new ArrayList<>();
+
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Task> tasks = new ArrayList<>();
 
@@ -63,5 +69,4 @@ public class Project {
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TimeLog> timeLogs = new ArrayList<>();
-
 }

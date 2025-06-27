@@ -11,7 +11,9 @@ public class ProjectDetailedResDto {
     private UUID id;
     private String title;
     private String description;
-    private String username;
+    private String createdBy;
     private LocalDateTime createdAt;
     private List<TaskResDto> tasks;
+
+    private List<UserResDto> users;
 }

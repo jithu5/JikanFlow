@@ -30,7 +30,7 @@ public class TaskService {
                 ()-> new RuntimeException("Project not found")
         );
 
-        if (user.getId().equals(project.getUser().getId())){
+        if (user.getId().equals(project.getCreatedBy().getId())){
             Task task = new Task();
             task.setName(newTask.getName());
             task.setDescription(newTask.getDescription());

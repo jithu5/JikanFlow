@@ -5,15 +5,14 @@ import com.core.jikanflow.entities.User;
 import com.core.jikanflow.repository.ProjectRepo;
 import com.core.jikanflow.repository.UserRepo;
 import com.core.jikanflow.requestDTOS.ProjectReqDto;
-import com.core.jikanflow.responseDTOS.NoteResDto;
-import com.core.jikanflow.responseDTOS.ProjectDetailedResDto;
-import com.core.jikanflow.responseDTOS.ProjectResDto;
-import com.core.jikanflow.responseDTOS.TaskResDto;
+import com.core.jikanflow.responseDTOS.*;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -31,7 +30,14 @@ public class ProjectService {
         dto.setTitle(project.getTitle());
         dto.setDescription(project.getDescription());
         dto.setCreatedAt(project.getCreatedAt());
-        dto.setUsername(project.getUser().getUsername());
+        dto.setCreatedBy(project.getCreatedBy().getUsername());
+        dto.setUsers(project.getUsers().stream().map( u ->{
+            UserResDto userResDto = new UserResDto();
+            userResDto.setUsername(u.getUsername());
+            userResDto.setEmail(u.getEmail());
+            return userResDto;
+        }).toList()
+        );
 //        dto.setUpdatedAt(project.getUpdatedAt());
 
         List<TaskResDto> taskDtos = project.getTasks().stream().map(task -> {
@@ -69,17 +75,22 @@ public class ProjectService {
         Project project = new Project();
         project.setTitle(newProjectDto.getTitle());
         project.setDescription(newProjectDto.getDescription());
-        project.setUser(user);
+        project.setCreatedBy(user);
+        project.setUsers(new ArrayList<>(List.of(user))); // 👈 Add current user to list
 
         Project saved = projectRepo.save(project);
 
-        // Map to response DTO
         ProjectResDto resDto = new ProjectResDto();
         resDto.setId(saved.getId());
         resDto.setTitle(saved.getTitle());
         resDto.setDescription(saved.getDescription());
-        resDto.setUsername(user.getUsername());
-
+        resDto.setUsers(saved.getUsers().stream().map( u -> {
+            UserResDto userResDto = new UserResDto();
+            userResDto.setEmail(u.getEmail());
+            userResDto.setUsername(u.getUsername());
+            return userResDto;
+        }).toList());
+        resDto.setCreatedBy(user.getUsername()); // optional: maybe show "Created by"
         return resDto;
     }
 
@@ -88,14 +99,20 @@ public class ProjectService {
         User user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        List<Project> projects = projectRepo.findByUserId(user.getId());
+        List<Project> projects = projectRepo.findAllByCreatedBy(user);
 
         return projects.stream().map(p -> {
             ProjectResDto dto = new ProjectResDto();
             dto.setId(p.getId());
             dto.setTitle(p.getTitle());
             dto.setDescription(p.getDescription());
-            dto.setUsername(user.getUsername());
+            dto.setCreatedBy(username); // You can also display creator if needed
+            dto.setUsers(p.getUsers().stream().map( u -> {
+                UserResDto userResDto = new UserResDto();
+                userResDto.setEmail(u.getEmail());
+                userResDto.setUsername(u.getUsername());
+                return userResDto;
+            }).toList());
             return dto;
         }).collect(Collectors.toList());
     }
@@ -110,7 +127,7 @@ public class ProjectService {
                 ()-> new RuntimeException("Project not found")
         );
 
-        if (project.getUser().getId().equals(user.getId())){
+        if (project.getCreatedBy().getId().equals(user.getId())){
             projectRepo.deleteById(projectId);
         }else {
             throw new RuntimeException("Unauthorized to delete");
@@ -129,11 +146,37 @@ public class ProjectService {
                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
         // Verify ownership
-        if (!project.getUser().getId().equals(user.getId())) {
+        if (!project.getCreatedBy().getId().equals(user.getId())) {
             throw new RuntimeException("Unauthorized access");
         }
 
         // Build and return DTO
         return convertToProjectDetailedDto(project);
+    }
+
+    public void addNewMember(UUID projectId, UUID userId) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        User user = userRepo.findByUsername(username).orElseThrow(
+                ()-> new UsernameNotFoundException("User not found")
+        );
+
+        if (user.getId().equals(userId)){
+            Project project = projectRepo.findById(projectId).orElseThrow(
+                    ()-> new RuntimeException("Project not found")
+            );
+
+            // Check if authenticated user is part of the project
+            boolean isMember = project.getUsers().stream()
+                    .anyMatch(u -> u.getId().equals(user.getId()));
+
+            if (isMember) {
+                throw new RuntimeException("User is already added to this project.");
+            }
+
+            // add user
+            project.getUsers().add(user);
+            projectRepo.save(project);
+        }
     }
 }
