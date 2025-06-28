@@ -3,7 +3,6 @@ package com.core.jikanflow.config;
 import com.core.jikanflow.service.UserDetailsImpl;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,7 +34,7 @@ public class JwtUtils {
                 .subject(username)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 2 * 24 * 60 * 60 * 1000)) //2 days
-                .signWith(getKey(), SignatureAlgorithm.HS256)
+                .signWith(getKey())
                 .compact();
     }
 
@@ -44,7 +43,7 @@ public class JwtUtils {
                 .verifyWith((SecretKey) getKey())
                 .build()
                 .parseSignedClaims(token)
-                .getBody()
+                .getPayload()
                 .getSubject();
     }
 
