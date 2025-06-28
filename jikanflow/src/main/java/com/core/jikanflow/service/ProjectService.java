@@ -144,11 +144,6 @@ public class ProjectService {
         Project project = projectRepo.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
-        // Verify ownership
-        if (!project.getCreatedBy().getId().equals(user.getId())) {
-            throw new RuntimeException("Unauthorized access");
-        }
-
         // Build and return DTO
         return convertToProjectDetailedDto(project);
     }

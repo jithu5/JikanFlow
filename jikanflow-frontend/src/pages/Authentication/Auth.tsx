@@ -1,105 +1,190 @@
+import { useLoginUser, useRegisterUser } from "@/apiQuery/apiQuery"
 import { Button } from "@/components/ui/button"
 import {
     Card,
-    CardAction,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
-    CardTitle,
+    CardTitle
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useForm } from "react-hook-form"
+
+type LoginForm = {
+    username: string
+    password: string
+}
+
+type SignupForm = {
+    username: string
+    email: string
+    password: string
+}
 
 function Auth() {
+    const {
+        register: registerLogin,
+        handleSubmit: handleLoginSubmit,
+        formState: { errors: loginErrors, isSubmitting: loginLoading },
+        reset: resetLogin,
+    } = useForm<LoginForm>()
+
+    const {
+        register: registerSignup,
+        handleSubmit: handleSignupSubmit,
+        formState: { errors: signupErrors, isSubmitting: signupLoading },
+        reset: resetSignup,
+    } = useForm<SignupForm>()
+
+    const useLoginMutation = useLoginUser()
+    const onLogin = async (data: LoginForm) => {
+        console.log("🔐 Logging in with", data)
+        // await loginMutation.mutateAsync(data)
+        try {
+            const responseData = await useLoginMutation.mutateAsync(data);
+            console.log("Login successful", responseData);
+            localStorage.setItem("token",JSON.stringify(responseData?.token))
+        } catch (error: any) {
+            console.error("Login failed", error?.response?.data);
+        }
+          
+    }
+
+    const registerUserMutation = useRegisterUser();
+
+    const onSignup = async (data: SignupForm) => {
+        registerUserMutation.mutate(data, {
+            onSuccess: (responseData) => {
+                console.log("✅ Registration success:", responseData);
+            },
+            onError: (error) => {
+                console.error("❌ Registration failed:", error);
+            }
+        });
+    };
+
+
     return (
-        <div className="flex flex-col md:flex-row min-h-screen items-center justify-center bg-gray-100 p-4">
-            {/* Left - Form Section */}
-            <div className="w-full md:w-3/5 max-w-lg mx-auto">
-                <Tabs defaultValue="account">
-                    <TabsList className="w-full mb-4 bg-white">
-                        <TabsTrigger className="w-full" value="account">Account</TabsTrigger>
-                        <TabsTrigger className="w-full" value="password">Password</TabsTrigger>
+        <div className="flex min-h-screen flex-col md:flex-row items-center justify-center bg-gray-50 px-4 py-12">
+            <div className="w-full max-w-md space-y-6">
+                <Tabs defaultValue="login" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 bg-white shadow rounded-lg mb-6">
+                        <TabsTrigger value="login">Login</TabsTrigger>
+                        <TabsTrigger value="signup">Sign Up</TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="account">
+                    {/* 🔑 Login */}
+                    <TabsContent value="login">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Account</CardTitle>
-                                <CardDescription>
-                                    Make changes to your account here. Click save when you&apos;re done.
-                                </CardDescription>
+                                <CardTitle className="text-2xl">Welcome Back</CardTitle>
+                                <CardDescription>Enter your credentials to log in</CardDescription>
                             </CardHeader>
-                            <CardContent className="grid gap-6">
-                                <div className="grid gap-3">
-                                    <Label htmlFor="tabs-demo-name">Name</Label>
-                                    <Input id="tabs-demo-name" defaultValue="Pedro Duarte" />
-                                </div>
-                                <div className="grid gap-3">
-                                    <Label htmlFor="tabs-demo-username">Username</Label>
-                                    <Input id="tabs-demo-username" defaultValue="@peduarte" />
-                                </div>
+                            <CardContent>
+                                <form onSubmit={handleLoginSubmit(onLogin)} className="grid gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="username">Username</Label>
+                                        <Input
+                                            id="username"
+                                            type="text"
+                                            placeholder="you123"
+                                            {...registerLogin("username", { required: "Username is required" })}
+                                        />
+                                        {loginErrors.username && (
+                                            <p className="text-sm text-red-500">{loginErrors.username.message}</p>
+                                        )}
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="password">Password</Label>
+                                        <Input
+                                            id="password"
+                                            type="password"
+                                            placeholder="••••••••"
+                                            {...registerLogin("password", { required: "Password is required" })}
+                                        />
+                                        {loginErrors.password && (
+                                            <p className="text-sm text-red-500">{loginErrors.password.message}</p>
+                                        )}
+                                    </div>
+
+                                    <div className="text-right text-sm">
+                                        <a href="#" className="text-blue-600 hover:underline">Forgot password?</a>
+                                    </div>
+
+                                    <Button type="submit" disabled={loginLoading} className="w-full">
+                                        {loginLoading ? "Logging in..." : "Login"}
+                                    </Button>
+                                </form>
                             </CardContent>
-                            <CardFooter>
-                                <Button>Save changes</Button>
-                            </CardFooter>
                         </Card>
                     </TabsContent>
 
-                    <TabsContent value="password">
-                        <Card className="w-full">
+                    {/* 📝 Signup */}
+                    <TabsContent value="signup">
+                        <Card>
                             <CardHeader>
-                                <CardTitle>Login to your account</CardTitle>
-                                <CardDescription>
-                                    Enter your email below to login to your account
-                                </CardDescription>
-                                <CardAction>
-                                    <Button variant="link">Sign Up</Button>
-                                </CardAction>
+                                <CardTitle className="text-2xl">Create an Account</CardTitle>
+                                <CardDescription>Fill in the details to get started</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <form>
-                                    <div className="flex flex-col gap-6">
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="email">Email</Label>
-                                            <Input
-                                                id="email"
-                                                type="email"
-                                                placeholder="m@example.com"
-                                                required
-                                            />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <div className="flex items-center">
-                                                <Label htmlFor="password">Password</Label>
-                                                <a
-                                                    href="#"
-                                                    className="ml-auto text-sm underline hover:underline-offset-4"
-                                                >
-                                                    Forgot your password?
-                                                </a>
-                                            </div>
-                                            <Input id="password" type="password" required />
-                                        </div>
+                                <form onSubmit={handleSignupSubmit(onSignup)} className="grid gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="username">Username</Label>
+                                        <Input
+                                            id="username"
+                                            type="text"
+                                            placeholder="@john"
+                                            {...registerSignup("username", { required: "Username is required" })}
+                                        />
+                                        {signupErrors.username && (
+                                            <p className="text-sm text-red-500">{signupErrors.username.message}</p>
+                                        )}
                                     </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="email-signup">Email</Label>
+                                        <Input
+                                            id="email-signup"
+                                            type="email"
+                                            placeholder="you@example.com"
+                                            {...registerSignup("email", { required: "Email is required" })}
+                                        />
+                                        {signupErrors.email && (
+                                            <p className="text-sm text-red-500">{signupErrors.email.message}</p>
+                                        )}
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="password-signup">Password</Label>
+                                        <Input
+                                            id="password-signup"
+                                            type="password"
+                                            {...registerSignup("password", { required: "Password is required" })}
+                                        />
+                                        {signupErrors.password && (
+                                            <p className="text-sm text-red-500">{signupErrors.password.message}</p>
+                                        )}
+                                    </div>
+
+                                    <Button type="submit" disabled={signupLoading} className="w-full">
+                                        {signupLoading ? "Signing up..." : "Sign Up"}
+                                    </Button>
                                 </form>
                             </CardContent>
-                            <CardFooter className="flex-col gap-2">
-                                <Button type="submit" className="w-full">Login</Button>
-                           
-                            </CardFooter>
                         </Card>
                     </TabsContent>
                 </Tabs>
             </div>
 
-            {/* Right - Image Section */}
-            <div className="hidden md:block w-full md:w-2/5 p-6">
+            {/* Image Section */}
+            <div className="hidden md:block w-full md:w-2/5 px-6">
                 <img
-                    src="/auth-image.png" // 📸 Replace with your image path (in /public)
-                    alt="Auth illustration"
-                    className="w-full h-auto rounded-xl shadow-lg object-cover"
+                    src="/auth-image.png"
+                    alt="Authentication Illustration"
+                    className="w-full h-auto rounded-xl object-cover shadow-lg"
                 />
             </div>
         </div>

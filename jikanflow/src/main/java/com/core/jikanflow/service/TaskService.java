@@ -7,6 +7,7 @@ import com.core.jikanflow.repository.ProjectRepo;
 import com.core.jikanflow.repository.TaskRepo;
 import com.core.jikanflow.repository.UserRepo;
 import com.core.jikanflow.requestDTOS.TaskReqDto;
+import com.core.jikanflow.requestDTOS.UpdateTaskReqDto;
 import com.core.jikanflow.responseDTOS.NoteResDto;
 import com.core.jikanflow.responseDTOS.TaskResDto;
 import lombok.AllArgsConstructor;
@@ -14,7 +15,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -42,7 +46,7 @@ public class TaskService {
             task.setStatus(newTask.getStatus());
             task.setPriority(newTask.getPriority());
             task.setProject(project);
-            task.setUser(user);
+            task.setCreatedBy(user);
 
             Task savedTask = taskRepo.save(task);
 
@@ -95,4 +99,44 @@ public class TaskService {
         );
         return taskResDto;
     }
+
+    public void saveTaskPositions(UUID projectId, List<UpdateTaskReqDto> updatedTasks) {
+        // Authenticate user
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepo.findByUsername(username).orElseThrow(
+                () -> new UsernameNotFoundException("User not found")
+        );
+
+        // Validate project
+        Project project = projectRepo.findById(projectId).orElseThrow(
+                () -> new RuntimeException("Project not found")
+        );
+
+        if (project.getUsers().stream().noneMatch(u -> u.getId().equals(user.getId()))) {
+            throw new RuntimeException("Unauthorized to update tasks for this project");
+        }
+
+        // Fetch all involved task IDs
+        List<UUID> taskIds = updatedTasks.stream()
+                .map(UpdateTaskReqDto::getId)
+                .toList();
+
+        List<Task> existingTasks = taskRepo.findAllById(taskIds);
+
+        // Map by ID for efficient update
+        Map<UUID, Task> taskMap = existingTasks.stream()
+                .collect(Collectors.toMap(Task::getId, t -> t));
+
+        for (UpdateTaskReqDto dto : updatedTasks) {
+            Task task = taskMap.get(dto.getId());
+            if (task != null) {
+                task.setOrderIndex(dto.getOrderIndex());
+                task.setStatus(dto.getStatus()); // already decided by frontend
+            }
+        }
+
+        taskRepo.saveAll(taskMap.values());
+    }
+
+
 }

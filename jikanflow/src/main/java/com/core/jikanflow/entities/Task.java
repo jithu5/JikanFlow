@@ -39,8 +39,8 @@ public class Task {
 
     // 👇 This is the foreign key: user_id → users.id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "created_by", nullable = false)
+    private User createdBy;
 
     // 👇 This is the foreign key: user_id → users.id
     @ManyToOne(fetch = FetchType.LAZY)

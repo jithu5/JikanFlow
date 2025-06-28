@@ -1,12 +1,14 @@
 package com.core.jikanflow.controllers;
 
 import com.core.jikanflow.requestDTOS.TaskReqDto;
+import com.core.jikanflow.requestDTOS.UpdateTaskReqDto;
 import com.core.jikanflow.responseDTOS.TaskResDto;
 import com.core.jikanflow.service.TaskService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -36,6 +38,4 @@ public class TaskController {
         }
     }
 
-    @PutMapping("/edit/{taskId}")
-    public ResponseEntity<?> editTaskById()
 }

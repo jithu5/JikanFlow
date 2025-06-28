@@ -3,6 +3,7 @@ import App from "../App"
 import { Auth, DashboardLanding, DashboardLayout, KanbanBoard, LandingPage } from "../pages/index"
 
 function router() {
+  
   const router = createBrowserRouter([
     {
       path: "/",

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Kanban,
     PlusCircle,
@@ -6,6 +6,7 @@ import {
 import { DndContext, PointerSensor, useSensor, useSensors, closestCorners,type DragEndEvent, type DragOverEvent, type DragStartEvent, DragOverlay } from "@dnd-kit/core";
 import Tasks from "./Tasks";
 import AddTask from "./AddTask";
+import stompClient from "../../../lib/socket"
 
 export interface IForm {
     title: string;
@@ -27,6 +28,40 @@ export type TaskMap = {
 
 function KanbanBoard() {
     const [activeTask, setActiveTask] = useState<ITask | null>(null);
+
+    useEffect(() => {
+        stompClient.onConnect = () => {
+            console.log("🟢 Connected to WebSocket");
+
+            // Subscribe to updates
+            stompClient.subscribe("/topic/project/123e4567-e89b-12d3-a456-426614174000", (message) => {
+                const payload = JSON.parse(message.body);
+                console.log("🔁 Incoming update", payload);
+
+                // Replace your task state (if full update)
+                if (payload.updatedTasks) {
+                    const grouped: TaskMap = {
+                        TODO: [],
+                        "IN PROGRESS": [],
+                        HOLD: [],
+                        REMOVE: [],
+                        DONE: [],
+                    };
+                    payload.updatedTasks.forEach((task: ITask) => {
+                        grouped[task.status].push(task);
+                    });
+                    setTasks(grouped);
+                }
+            });
+        };
+
+        stompClient.activate();
+
+        return () => {
+            if (stompClient.active) stompClient.deactivate();
+        };
+    }, []);
+    
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -90,6 +125,14 @@ function KanbanBoard() {
                 setActiveTask({ ...found, status });
                 break;
             }
+            // stompClient.publish({
+            //     destination: "/app/task-drag-started",
+            //     body: JSON.stringify({
+            //         projectId: "123e4567-e89b-12d3-a456-426614174000",
+            //         taskId: active.id,
+            //         user: "Abijith"
+            //     })
+            // });
         }
     };
 
