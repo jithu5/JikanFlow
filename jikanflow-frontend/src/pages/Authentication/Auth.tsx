@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import useUserStore from "@/store/user"
 import { useForm } from "react-hook-form"
+import toast from "react-hot-toast"
+import { useNavigate } from "react-router-dom"
 
 type LoginForm = {
     username: string
@@ -27,6 +29,7 @@ type SignupForm = {
 function Auth() {
 
     const {setToken} = useUserStore();
+    const navigate = useNavigate();
     const {
         register: registerLogin,
         handleSubmit: handleLoginSubmit,
@@ -38,7 +41,6 @@ function Auth() {
         register: registerSignup,
         handleSubmit: handleSignupSubmit,
         formState: { errors: signupErrors, isSubmitting: signupLoading },
-        reset: resetSignup,
     } = useForm<SignupForm>()
 
     const useLoginMutation = useLoginUser()
@@ -47,11 +49,14 @@ function Auth() {
         // await loginMutation.mutateAsync(data)
         try {
             const responseData = await useLoginMutation.mutateAsync(data);
-            console.log("Login successful", responseData);
             localStorage.setItem("token",JSON.stringify(responseData?.token))
             setToken(responseData?.token);
+            toast.success("User logged in successfully.")
+            navigate("/")
         } catch (error: any) {
-            console.error("Login failed", error?.response?.data);
+            toast.error(error?.response?.data)
+        }finally{
+            resetLogin()
         }
           
     }
@@ -61,10 +66,10 @@ function Auth() {
     const onSignup = async (data: SignupForm) => {
         registerUserMutation.mutate(data, {
             onSuccess: (responseData) => {
-                console.log("✅ Registration success:", responseData);
+                toast.success(responseData);
             },
-            onError: (error) => {
-                console.error("❌ Registration failed:", error);
+            onError: (error: any) => {
+                toast.error(error?.response?.data)
             }
         });
     };

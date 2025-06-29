@@ -32,7 +32,6 @@ public class TaskWebSocketController {
         return project.getUsers().stream().anyMatch(u -> u.getUsername().equals(username));
     }
 
-
     @MessageMapping("/task-drag-started")
     public void handleTaskBeingDragged(Map<String, Object> message, Principal principal) {
         String username = principal.getName();

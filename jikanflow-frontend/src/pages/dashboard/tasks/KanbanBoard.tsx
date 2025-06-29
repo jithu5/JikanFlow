@@ -6,7 +6,7 @@ import {
 import { DndContext, PointerSensor, useSensor, useSensors, closestCorners,type DragEndEvent, type DragOverEvent, type DragStartEvent, DragOverlay } from "@dnd-kit/core";
 import Tasks from "./Tasks";
 import AddTask from "./AddTask";
-import stompClient from "../../../lib/socket"
+import {getStompClient} from "../../../lib/socket"
 
 export interface IForm {
     title: string;
@@ -29,39 +29,28 @@ export type TaskMap = {
 function KanbanBoard() {
     const [activeTask, setActiveTask] = useState<ITask | null>(null);
 
+    // Inside your useEffect:
     useEffect(() => {
-        stompClient.onConnect = () => {
-            console.log("🟢 Connected to WebSocket");
+        const client = getStompClient();
 
-            // Subscribe to updates
-            stompClient.subscribe("/topic/project/123e4567-e89b-12d3-a456-426614174000", (message) => {
+        client.onConnect = () => {
+            console.log("🟢 STOMP connected");
+            client.subscribe("/topic/project/123e4567-e89b-12d3-a456-426614174000", (message) => {
                 const payload = JSON.parse(message.body);
-                console.log("🔁 Incoming update", payload);
-
-                // Replace your task state (if full update)
-                if (payload.updatedTasks) {
-                    const grouped: TaskMap = {
-                        TODO: [],
-                        "IN PROGRESS": [],
-                        HOLD: [],
-                        REMOVE: [],
-                        DONE: [],
-                    };
-                    payload.updatedTasks.forEach((task: ITask) => {
-                        grouped[task.status].push(task);
-                    });
-                    setTasks(grouped);
-                }
+                console.log("📨 Received update", payload);
+                // Update tasks
             });
         };
 
-        stompClient.activate();
+        if (!client.active) client.activate(); // ✅ Activate only once
 
         return () => {
-            if (stompClient.active) stompClient.deactivate();
+            if (client.active) {
+                console.log("🔴 Disconnecting WebSocket...");
+                client.deactivate();
+            }
         };
     }, []);
-    
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -114,28 +103,55 @@ function KanbanBoard() {
         setIsOpen(false);
     };
 
+    // const handleDragStart = (event: DragStartEvent) => {
+    //     const { active } = event;
+    //     console.log(active)
+
+    //     // Find the task by ID
+    //     for (const status in tasks) {
+    //         const found = tasks[status].find((task) => task.id === active.id);
+    //         if (found) {
+    //             setActiveTask({ ...found, status });
+    //             break;
+    //         }
+    //         // stompClient.publish({
+    //         //     destination: "/app/task-drag-started",
+    //         //     body: JSON.stringify({
+    //         //         projectId: "123e4567-e89b-12d3-a456-426614174000",
+    //         //         taskId: active.id,
+    //         //         user: "Abijith"
+    //         //     })
+    //         // });
+    //     }
+    // };
+
     const handleDragStart = (event: DragStartEvent) => {
         const { active } = event;
-        console.log(active)
+        const stompClient = getStompClient(); // ✅ get the client
 
-        // Find the task by ID
+        // Find the task and set activeTask
         for (const status in tasks) {
             const found = tasks[status].find((task) => task.id === active.id);
             if (found) {
-                setActiveTask({ ...found, status });
+                const updatedTask = { ...found, status };
+                setActiveTask(updatedTask);
+
+                // ✅ Send drag-start message
+                stompClient.publish({
+                    destination: "/app/task-drag-started",
+                    body: JSON.stringify({
+                        projectId: "123e4567-e89b-12d3-a456-426614174000",
+                        taskId: updatedTask.id,
+                        user: "Abijith", // you can fetch this from your auth store too
+                    }),
+                });
+
                 break;
             }
-            // stompClient.publish({
-            //     destination: "/app/task-drag-started",
-            //     body: JSON.stringify({
-            //         projectId: "123e4567-e89b-12d3-a456-426614174000",
-            //         taskId: active.id,
-            //         user: "Abijith"
-            //     })
-            // });
         }
     };
 
+    
     const handleDragOver = (event: DragOverEvent) => {
         const { active, over } = event;
         if (!active || !over || !activeTask) return;
