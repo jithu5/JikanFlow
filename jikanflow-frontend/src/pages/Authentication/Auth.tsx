@@ -10,6 +10,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import useUserStore from "@/store/user"
 import { useForm } from "react-hook-form"
 
 type LoginForm = {
@@ -24,6 +25,8 @@ type SignupForm = {
 }
 
 function Auth() {
+
+    const {setToken} = useUserStore();
     const {
         register: registerLogin,
         handleSubmit: handleLoginSubmit,
@@ -46,6 +49,7 @@ function Auth() {
             const responseData = await useLoginMutation.mutateAsync(data);
             console.log("Login successful", responseData);
             localStorage.setItem("token",JSON.stringify(responseData?.token))
+            setToken(responseData?.token);
         } catch (error: any) {
             console.error("Login failed", error?.response?.data);
         }

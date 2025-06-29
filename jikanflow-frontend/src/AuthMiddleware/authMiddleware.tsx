@@ -7,7 +7,7 @@ type Props = {
     isLoading: boolean
 }
 
-function authMiddleware({ isAuthenticated, children, isLoading }: Props) {
+function AuthMiddleware({ isAuthenticated, children, isLoading }: Props) {
     const location = useLocation();
 
     const [loading, setLoading] = useState<boolean>(true);
@@ -37,4 +37,4 @@ function authMiddleware({ isAuthenticated, children, isLoading }: Props) {
     )
 }
 
-export default authMiddleware
+export default AuthMiddleware
