@@ -1,7 +1,6 @@
 package com.core.jikanflow.controllers;
 
 import com.core.jikanflow.requestDTOS.ProjectReqDto;
-import com.core.jikanflow.responseDTOS.ProjectDetailedResDto;
 import com.core.jikanflow.responseDTOS.ProjectResDto;
 import com.core.jikanflow.service.ProjectService;
 import jakarta.validation.Valid;
@@ -42,7 +41,7 @@ public class ProjectController {
     @GetMapping("/get/{projectId}")
     public ResponseEntity<?> getProjectById(@PathVariable UUID projectId){
         try {
-            ProjectDetailedResDto projects = projectService.findProjectById(projectId);
+            ProjectResDto projects = projectService.findProjectById(projectId);
             return ResponseEntity.ok().body(projects);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(e.getMessage());

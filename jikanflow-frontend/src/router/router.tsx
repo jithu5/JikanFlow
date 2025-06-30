@@ -17,7 +17,8 @@ const AppRouter = () => {
   const { token, setToken } = useUserStore()
 
   useEffect(() => {
-    const localToken = localStorage.getItem("token")
+    // ✅ Even safer (remove quotes manually if you're unsure)
+    const localToken = localStorage.getItem("token")?.replace(/^"|"$/g, "");
     if (!token) {
       if (localToken) {
         setToken(localToken)

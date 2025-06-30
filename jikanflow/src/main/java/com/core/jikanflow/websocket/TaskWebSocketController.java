@@ -1,10 +1,9 @@
 package com.core.jikanflow.websocket;
 
-import com.core.jikanflow.entities.Project;
 import com.core.jikanflow.entities.User;
 import com.core.jikanflow.requestDTOS.KanbanUpdateReqDto;
 import com.core.jikanflow.requestDTOS.UpdateTaskReqDto;
-import com.core.jikanflow.responseDTOS.ProjectDetailedResDto;
+import com.core.jikanflow.responseDTOS.ProjectResDto;
 import com.core.jikanflow.service.ProjectService;
 import com.core.jikanflow.service.TaskService;
 import com.core.jikanflow.service.UserService;
@@ -28,7 +27,7 @@ public class TaskWebSocketController {
     private final UserService userService;
 
     private boolean isUserMemberOfProject(String username, UUID projectId) {
-        ProjectDetailedResDto project = projectService.findProjectById(projectId);
+        ProjectResDto project = projectService.findProjectById(projectId);
         return project.getUsers().stream().anyMatch(u -> u.getUsername().equals(username));
     }
 
@@ -38,7 +37,7 @@ public class TaskWebSocketController {
         User user = userService.findByUsername(username);
         UUID projectId = UUID.fromString((String) message.get("projectId"));
 
-        ProjectDetailedResDto project = projectService.findProjectById(projectId);
+        ProjectResDto project = projectService.findProjectById(projectId);
 
         if (!isUserMemberOfProject(username, projectId)) {
             throw new RuntimeException("User is not a member of the project");
@@ -53,7 +52,7 @@ public class TaskWebSocketController {
         User user = userService.findByUsername(username);
         UUID projectId = message.getProjectId();
 
-        ProjectDetailedResDto project = projectService.findProjectById(projectId);
+        ProjectResDto project = projectService.findProjectById(projectId);
 
         if (!isUserMemberOfProject(username, projectId)) {
             throw new RuntimeException("User is not a member of the project");

@@ -6,6 +6,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +18,7 @@ import java.util.Date;
 @Component
 public class JwtUtils {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtUtils.class);
     @Value("${jwt.secret}")
     private String SECRET;
 
@@ -48,18 +51,18 @@ public class JwtUtils {
     }
 
     public boolean validateToken(String authToken){
+        log.info(authToken);
         try {
             Jwts.parser().verifyWith((SecretKey) getKey())
                     .build().parseSignedClaims(authToken);
             return true;
-        } catch (JwtException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalArgumentException e) {
+        } catch (JwtException | IllegalArgumentException e) {
             throw new RuntimeException(e);
         }
     }
 
     private Key getKey() {
+        log.info(SECRET);
         byte[] bytes = Decoders.BASE64.decode(SECRET);
         return Keys.hmacShaKeyFor(bytes);
     }

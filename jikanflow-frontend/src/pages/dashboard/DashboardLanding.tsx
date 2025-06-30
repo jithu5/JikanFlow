@@ -1,102 +1,61 @@
-type Project = {
+import { useFetchAllProjects } from "@/apiQuery/apiQuery";
+import { AddProject } from "@/components";
+import { Button } from "@/components/ui/button";
+import useUserStore from "@/store/user";
+import { useMemo } from "react";
+
+type ProjectCardData = {
     id: string;
     title: string;
     description: string;
     startedAt: string;
     inProgress: number;
     onHold: number;
+    usersCount: number;
 };
 
-const dummyProjects: Project[] = [
-    {
-        id: "1",
-        title: "Client Website Redesign",
-        description: "Redesign the homepage and product pages for the client.",
-        startedAt: "2024-06-01",
-        inProgress: 4,
-        onHold: 1,
-    },
-    {
-        id: "2",
-        title: "Portfolio Build",
-        description: "Create personal portfolio using Next.js and Tailwind CSS.",
-        startedAt: "2024-05-15",
-        inProgress: 2,
-        onHold: 0,
-    },
-    {
-        id: "3",
-        title: "Mobile App for TrackFlow",
-        description: "Build mobile version using React Native with shared logic.",
-        startedAt: "2024-06-10",
-        inProgress: 3,
-        onHold: 1,
-    },
-    {
-        id: "4",
-        title: "Blog Automation Tool",
-        description: "Tool for content creators to automate blog workflows.",
-        startedAt: "2024-04-20",
-        inProgress: 5,
-        onHold: 2,
-    },
-    {
-        id: "5",
-        title: "AI Note Summarizer",
-        description: "Add AI summarization feature for task notes and time logs.",
-        startedAt: "2024-06-05",
-        inProgress: 1,
-        onHold: 0,
-    },
-    {
-        id: "6",
-        title: "Invoice System Revamp",
-        description: "Redesign invoice logic and PDF formatting.",
-        startedAt: "2024-05-28",
-        inProgress: 2,
-        onHold: 2,
-    },
-    {
-        id: "7",
-        title: "RabbitMQ Notification Service",
-        description: "Standalone service to manage reminders and email alerts.",
-        startedAt: "2024-06-08",
-        inProgress: 4,
-        onHold: 0,
-    },
-    {
-        id: "8",
-        title: "DevOps Pipeline Setup",
-        description: "Set up CI/CD using GitHub Actions and Docker Compose.",
-        startedAt: "2024-06-02",
-        inProgress: 2,
-        onHold: 1,
-    },
-    {
-        id: "9",
-        title: "Client CRM Integration",
-        description: "Integrate third-party CRM API to sync client contacts.",
-        startedAt: "2024-05-18",
-        inProgress: 3,
-        onHold: 0,
-    },
-    {
-        id: "10",
-        title: "Kanban UX Redesign",
-        description: "Improve drag-and-drop experience and add column limits.",
-        startedAt: "2024-06-03",
-        inProgress: 5,
-        onHold: 1,
-    },
-];
-
 function DashboardLanding() {
+    const { token } = useUserStore();
+    const { data, isLoading, error } = useFetchAllProjects(token);
+
+    const projects: ProjectCardData[] = useMemo(() => {
+        if (!data) return [];
+
+        return data.map((project: any) => {
+            const inProgress = project.tasks.filter(
+                (task: any) => task.status === "IN_PROGRESS"
+            ).length;
+
+            const onHold = project.tasks.filter(
+                (task: any) => task.status === "HOLD"
+            ).length;
+
+            return {
+                id: project.id,
+                title: project.title,
+                description: project.description,
+                startedAt: project.createdAt,
+                inProgress,
+                onHold,
+                usersCount: project.users.length,
+            };
+        });
+    }, [data]);
+
+    if (isLoading) return <p className="p-6">Loading projects...</p>;
+    if (error) return <p className="p-6 text-red-600">Error loading projects</p>;
+
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
-            <h2 className="text-3xl font-bold mb-8 text-gray-800">My Projects</h2>
+            <div className="max-md:px-10 px-4 py-1 flex justify-between">
+                <h2 className="text-3xl font-bold mb-8 text-gray-800">My Projects</h2>
+
+                {/* Add new projects */}
+                <AddProject />
+            </div>
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {dummyProjects.map((project) => (
+                {projects.map((project) => (
                     <div
                         key={project.id}
                         className="bg-white rounded-xl shadow p-5 border border-gray-200"
@@ -109,7 +68,7 @@ function DashboardLanding() {
                             Started: {new Date(project.startedAt).toLocaleDateString()}
                         </p>
 
-                        <div className="flex gap-4 mb-4">
+                        <div className="flex gap-4 mb-3">
                             <div className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">
                                 In Progress: {project.inProgress}
                             </div>
@@ -118,11 +77,15 @@ function DashboardLanding() {
                             </div>
                         </div>
 
+                        <div className="text-xs text-gray-600 mb-3">
+                            👥 {project.usersCount} members
+                        </div>
+
                         <div className="flex justify-between mt-auto">
-                            <button className="text-sm text-blue-600 hover:underline">
+                            <Button variant={"link"} className="text-sm text-blue-600 hover:underline cursor-pointer">
                                 📊 View Analytics
-                            </button>
-                            <button className="bg-blue-600 text-white text-sm px-3 py-1 rounded hover:bg-blue-700 transition">
+                            </Button>
+                            <button className="bg-blue-600 text-white text-sm px-3 py-1 rounded hover:bg-blue-700 transition cursor-pointer">
                                 ➡️ Open Project
                             </button>
                         </div>

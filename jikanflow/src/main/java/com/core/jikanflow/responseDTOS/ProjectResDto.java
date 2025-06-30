@@ -3,6 +3,7 @@ package com.core.jikanflow.responseDTOS;
 import com.core.jikanflow.entities.User;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -12,7 +13,8 @@ public class ProjectResDto {
     private String title;
     private String description;
     private String createdBy;
+    private LocalDateTime createdAt;
+    private List<TaskResDto> tasks;
 
     private List<UserResDto> users;
-
 }

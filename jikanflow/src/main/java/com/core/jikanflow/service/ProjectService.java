@@ -23,8 +23,8 @@ public class ProjectService {
     private final ProjectRepo projectRepo;
     private final UserRepo userRepo;
 
-    private ProjectDetailedResDto convertToProjectDetailedDto(Project project) {
-        ProjectDetailedResDto dto = new ProjectDetailedResDto();
+    private ProjectResDto convertToProjectDetailedDto(Project project) {
+        ProjectResDto dto = new ProjectResDto();
         dto.setId(project.getId());
         dto.setTitle(project.getTitle());
         dto.setDescription(project.getDescription());
@@ -100,21 +100,11 @@ public class ProjectService {
 
         List<Project> projects = projectRepo.findAllByCreatedBy(user);
 
-        return projects.stream().map(p -> {
-            ProjectResDto dto = new ProjectResDto();
-            dto.setId(p.getId());
-            dto.setTitle(p.getTitle());
-            dto.setDescription(p.getDescription());
-            dto.setCreatedBy(username); // You can also display creator if needed
-            dto.setUsers(p.getUsers().stream().map( u -> {
-                UserResDto userResDto = new UserResDto();
-                userResDto.setEmail(u.getEmail());
-                userResDto.setUsername(u.getUsername());
-                return userResDto;
-            }).toList());
-            return dto;
-        }).collect(Collectors.toList());
+        return projects.stream()
+                .map(this::convertToProjectDetailedDto)
+                .collect(Collectors.toList());
     }
+
 
 
     public void deleteProjectById(UUID projectId) {
@@ -133,7 +123,7 @@ public class ProjectService {
         }
     }
 
-    public ProjectDetailedResDto findProjectById(UUID projectId) {
+    public ProjectResDto findProjectById(UUID projectId) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
         // Get authenticated user
