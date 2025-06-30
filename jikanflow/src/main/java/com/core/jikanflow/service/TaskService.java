@@ -138,5 +138,38 @@ public class TaskService {
         taskRepo.saveAll(taskMap.values());
     }
 
+    public List<TaskResDto> findTaskByProjectId(UUID projectId) {
+        // Authenticate user
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepo.findByUsername(username).orElseThrow(
+                () -> new UsernameNotFoundException("User not found")
+        );
+
+        // Validate project
+        Project project = projectRepo.findById(projectId).orElseThrow(
+                () -> new RuntimeException("Project not found")
+        );
+
+        if (project.getUsers().stream().noneMatch(u-> u.getId().equals(user.getId()))){
+            throw new RuntimeException("Unauthorized");
+        }
+
+        // Fetch tasks
+        List<Task> tasks = taskRepo.findByProjectId(projectId);
+
+        // Map to DTOs
+        return tasks.stream().map(t -> {
+            TaskResDto dto = new TaskResDto();
+            dto.setId(t.getId());
+            dto.setName(t.getName());
+            dto.setDescription(t.getDescription());
+            dto.setDue(t.getDue());
+            dto.setOrderIndex(t.getOrderIndex());
+            dto.setStatus(t.getStatus());
+            dto.setPriority(t.getPriority());
+            dto.setCreatedAt(t.getCreatedAt());
+            return dto;
+        }).toList();
+    }
 
 }

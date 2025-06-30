@@ -17,6 +17,17 @@ interface ProjectData {
     description: string
 }
 
+export interface ITask {
+    name: string;
+    description: string;
+    status: "TODO" | "IN_PROGRESS" | "HOLD" | "REMOVE" | "DONE";
+    priority: "LOW" | "MEDIUM" | "HIGH";
+    orderIndex: number;
+    due: string; // ISO date string, e.g., "2025-07-01"
+    projectId: string; // UUID
+}
+  
+
 export const useRegisterUser = () => {
     return useMutation({
         mutationFn: async (userData: UserData) => {
@@ -48,6 +59,19 @@ export const useAddProject = (token: string)=>{
         }
     })
 }
+export const useAddTask = (token: string)=>{
+    return useMutation({
+        mutationFn:async (taskData: ITask)=>{
+            const response = await api.post("/api/main/tasks/create",taskData,{
+                headers:{
+                    Authorization: `Bearer ${token}`,
+                }
+            })
+            console.log(response)
+            return response.data;
+        }
+    })
+}
 
 export const useFetchAllProjects = (token: string) => {
     
@@ -69,3 +93,23 @@ export const useFetchAllProjects = (token: string) => {
         enabled: !!token, // prevent firing if token is not ready
     });
 };
+
+export const useFetchTasks = (token: string, projectId: string)=>{
+
+    return useQuery({
+        queryKey:["all-tasks"],
+        queryFn: async ()=>{
+            try {
+                const res = await api.get(`/api/main/tasks/get-all/${projectId}`,{
+                    headers:{
+                        Authorization:`Bearer ${token}`
+                    }
+                })
+                return res.data ?? [];
+            } catch (error) {
+                return error;
+            }
+        },
+        enabled: !!token
+    })
+}

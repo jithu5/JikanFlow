@@ -21,14 +21,14 @@ function AddTask({isOpen,setForm,setIsOpen,form,handleAddTask,columns}: Props) {
                           <input
                               type="text"
                               placeholder="Title"
-                              value={form.title}
-                              onChange={(e) => setForm({ ...form, title: e.target.value })}
+                              value={form.name}
+                              onChange={(e) => setForm({ ...form, name: e.target.value })}
                               className="w-full px-3 py-2 border rounded"
                           />
                           <textarea
                               placeholder="Description"
-                              value={form.desc}
-                              onChange={(e) => setForm({ ...form, desc: e.target.value })}
+                              value={form.description}
+                              onChange={(e) => setForm({ ...form, description: e.target.value })}
                               className="w-full px-3 py-2 border rounded"
                           />
                           <select

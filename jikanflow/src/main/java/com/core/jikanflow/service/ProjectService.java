@@ -98,7 +98,8 @@ public class ProjectService {
         User user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        List<Project> projects = projectRepo.findAllByCreatedBy(user);
+        // Get projects the user is a member of
+        List<Project> projects = projectRepo.findAllByUsers_Id(user.getId());
 
         return projects.stream()
                 .map(this::convertToProjectDetailedDto)

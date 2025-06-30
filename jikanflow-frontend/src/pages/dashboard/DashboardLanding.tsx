@@ -3,22 +3,14 @@ import { AddProject } from "@/components";
 import { Button } from "@/components/ui/button";
 import useProjectStore from "@/store/projetcs";
 import useUserStore from "@/store/user";
-import { useEffect, useMemo } from "react";
-
-type ProjectCardData = {
-    id: string;
-    title: string;
-    description: string;
-    startedAt: string;
-    inProgress: number;
-    onHold: number;
-    usersCount: number;
-};
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 function DashboardLanding() {
     const { token } = useUserStore();
     const { data, isLoading, error } = useFetchAllProjects(token);
-    const {setProjectsFromApi,projects} = useProjectStore();
+    const { setProjectsFromApi, projects } = useProjectStore();
+    const navigate = useNavigate()
 
     useEffect(() => {
         if (data && !isLoading && !error) {
@@ -69,7 +61,7 @@ function DashboardLanding() {
                             <Button variant={"link"} className="text-sm text-blue-600 hover:underline cursor-pointer">
                                 📊 View Analytics
                             </Button>
-                            <button className="bg-blue-600 text-white text-sm px-3 py-1 rounded hover:bg-blue-700 transition cursor-pointer">
+                            <button className="bg-blue-600 text-white text-sm px-3 py-1 rounded hover:bg-blue-700 transition cursor-pointer" onClick={() => navigate(`/dashboard/kanban-board/${project.id}`)}>
                                 ➡️ Open Project
                             </button>
                         </div>

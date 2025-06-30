@@ -42,6 +42,7 @@ function AddProject() {
             )
             addProject(responseData)
             console.log(responseData)
+            toast.success("A new Project is added.")
         } catch (error: any) {
             toast.error(error?.response?.data)
         }

@@ -1,7 +1,6 @@
 package com.core.jikanflow.controllers;
 
 import com.core.jikanflow.requestDTOS.TaskReqDto;
-import com.core.jikanflow.requestDTOS.UpdateTaskReqDto;
 import com.core.jikanflow.responseDTOS.TaskResDto;
 import com.core.jikanflow.service.TaskService;
 import lombok.AllArgsConstructor;
@@ -32,6 +31,16 @@ public class TaskController {
     public ResponseEntity<?> getTaskById(@PathVariable UUID taskId){
         try {
             TaskResDto taskResDto = taskService.findTaskById(taskId);
+            return ResponseEntity.ok().body(taskResDto);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/get-all/{projectId}")
+    public ResponseEntity<?> getTaskByProjectId(@PathVariable UUID projectId){
+        try {
+            List<TaskResDto> taskResDto = taskService.findTaskByProjectId(projectId);
             return ResponseEntity.ok().body(taskResDto);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(e.getMessage());

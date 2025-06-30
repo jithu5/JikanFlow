@@ -58,7 +58,7 @@ const AppRouter = () => {
           element: <DashboardLanding />
         },
         {
-          path: "kanban-board",
+          path: "kanban-board/:projectId",
           element: <KanbanBoard />
         }
       ]
