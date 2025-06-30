@@ -1,8 +1,9 @@
 import { useFetchAllProjects } from "@/apiQuery/apiQuery";
 import { AddProject } from "@/components";
 import { Button } from "@/components/ui/button";
+import useProjectStore from "@/store/projetcs";
 import useUserStore from "@/store/user";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 type ProjectCardData = {
     id: string;
@@ -17,34 +18,17 @@ type ProjectCardData = {
 function DashboardLanding() {
     const { token } = useUserStore();
     const { data, isLoading, error } = useFetchAllProjects(token);
+    const {setProjectsFromApi,projects} = useProjectStore();
 
-    const projects: ProjectCardData[] = useMemo(() => {
-        if (!data) return [];
-
-        return data.map((project: any) => {
-            const inProgress = project.tasks.filter(
-                (task: any) => task.status === "IN_PROGRESS"
-            ).length;
-
-            const onHold = project.tasks.filter(
-                (task: any) => task.status === "HOLD"
-            ).length;
-
-            return {
-                id: project.id,
-                title: project.title,
-                description: project.description,
-                startedAt: project.createdAt,
-                inProgress,
-                onHold,
-                usersCount: project.users.length,
-            };
-        });
-    }, [data]);
+    useEffect(() => {
+        if (data && !isLoading && !error) {
+            setProjectsFromApi(data);
+        }
+    }, [data, isLoading, error]);
 
     if (isLoading) return <p className="p-6">Loading projects...</p>;
     if (error) return <p className="p-6 text-red-600">Error loading projects</p>;
-
+    console.log(projects)
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
             <div className="max-md:px-10 px-4 py-1 flex justify-between">

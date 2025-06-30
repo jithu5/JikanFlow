@@ -43,6 +43,7 @@ export const useAddProject = (token: string)=>{
                     Authorization: `Bearer ${token}`,
                 }
             })
+            console.log(response)
             return response.data;
         }
     })

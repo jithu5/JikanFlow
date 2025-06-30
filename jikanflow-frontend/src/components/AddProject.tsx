@@ -16,11 +16,13 @@ import { useState } from "react";
 import { useAddProject } from "@/apiQuery/apiQuery";
 import useUserStore from "@/store/user";
 import toast from "react-hot-toast";
+import useProjectStore from "@/store/projetcs";
 
 function AddProject() {
     const [title, setTitle] = useState<string>("");
     const [description, setDescription] = useState<string>("");
     const { token } = useUserStore()
+    const {addProject} = useProjectStore()
 
     const useAddProjectMutation = useAddProject(token)
 
@@ -38,7 +40,8 @@ function AddProject() {
                     description
                 }
             )
-            toast.success(responseData.data);
+            addProject(responseData)
+            console.log(responseData)
         } catch (error: any) {
             toast.error(error?.response?.data)
         }
