@@ -25,7 +25,14 @@ function Tasks({ tasks, col, activeTask }: Props) {
                 strategy={verticalListSortingStrategy}
             >
                 {taskList.map((task) => (
-                    <TaskList key={task.id} task={{ ...task, color: col.color }} />
+                    <TaskList
+                        key={task.id}
+                        task={{
+                            ...task,
+                            id: String(task.id),
+                            color: col.color
+                        }}
+                    />
                 ))}
             </SortableContext>
         </div>

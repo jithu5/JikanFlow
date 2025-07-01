@@ -1,5 +1,7 @@
 package com.core.jikanflow.config;
 
+import com.core.jikanflow.entities.User;
+import com.core.jikanflow.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,6 +10,7 @@ import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 
@@ -19,6 +22,7 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(JwtHandshakeInterceptor.class);
     private final JwtUtils jwtUtils;
+    private final UserService userService;
 
     @Override
     public boolean beforeHandshake(
@@ -37,10 +41,14 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
             if (jwtUtils.validateToken(token)) {
                 String username = jwtUtils.getUsername(token);
                 attributes.put("username", username);
-
+                log.info("Users name ,"+ username);
+                User user = userService.findByUsername(username);
+                if (user == null){
+                    throw new UsernameNotFoundException("User is not found");
+                }
                 // ✅ Set Authentication manually
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(username, null, List.of());
+                        new UsernamePasswordAuthenticationToken(user, null, List.of());
 
                 SecurityContext context = SecurityContextHolder.createEmptyContext();
                 context.setAuthentication(authentication);

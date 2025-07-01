@@ -32,7 +32,7 @@ export interface ITask extends IForm {
     notes: number;
     priority: string;
     due: string;
-    id: number | string;
+    id: string;
     orderIndex: number;
     projectId: string;
 }
@@ -104,7 +104,7 @@ function KanbanBoard() {
             notes: 0,
             priority: "MEDIUM",
             due: "2025-07-01",
-            id: Date.now(),
+            id: String(Date.now()),
             orderIndex: tasks[form.status].length,
             projectId: project_id ?? "",
         };
@@ -154,9 +154,8 @@ function KanbanBoard() {
                 stompClient.publish({
                     destination: "/app/task-drag-started",
                     body: JSON.stringify({
-                        projectId: project_id,
-                        taskId: updatedTask.id,
-                        user: "Abijith",
+                        message:"Task is moving",
+                        projectId:project_id
                     }),
                 });
 
@@ -174,7 +173,7 @@ function KanbanBoard() {
         let toIndex: number | null = null;
 
         for (const status in tasks) {
-            const found = tasks[status].find((t) => t.id === Number(over.id));
+            const found = tasks[status].find((t) => t.id === over.id);
             if (found) {
                 toStatus = status;
                 break;
@@ -213,7 +212,7 @@ function KanbanBoard() {
 
         // Step 1: Try to identify if dropped on a task
         for (const status in tasks) {
-            const idx = tasks[status].findIndex((t) => t.id === Number(over.id));
+            const idx = tasks[status].findIndex((t) => t.id === over.id);
             if (idx !== -1) {
                 toColumn = status;
                 toIndex = idx;

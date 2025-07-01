@@ -1,5 +1,6 @@
 package com.core.jikanflow.config;
 
+import com.core.jikanflow.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,12 +17,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private static final Logger log = LoggerFactory.getLogger(WebSocketConfig.class);
     private final JwtUtils jwtUtils;
+    private final UserService userService;
     private String FRONTENDURL="http://localhost:5173";
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .addInterceptors(new JwtHandshakeInterceptor(jwtUtils))
+                .addInterceptors(new JwtHandshakeInterceptor(jwtUtils,userService))
                 .setHandshakeHandler(new CustomHandshakeHandler()) // 👈 key part
                 .setAllowedOriginPatterns(FRONTENDURL)
                 .withSockJS();

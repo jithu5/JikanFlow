@@ -6,11 +6,13 @@ import com.core.jikanflow.repository.ProjectRepo;
 import com.core.jikanflow.repository.UserRepo;
 import com.core.jikanflow.requestDTOS.ProjectReqDto;
 import com.core.jikanflow.responseDTOS.*;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -134,6 +136,28 @@ public class ProjectService {
         // Fetch project
         Project project = projectRepo.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
+        if(project.getUsers().stream().noneMatch(u -> u.getUsername().equals(username))){
+            throw new RuntimeException("Unauthorized");
+        }
+
+        // Build and return DTO
+        return convertToProjectDetailedDto(project);
+    }
+
+    @Transactional
+    public ProjectResDto findProjectById(UUID projectId, Principal principal) {
+        String username = principal.getName();
+
+        // Get authenticated user
+        User user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Fetch project
+        Project project = projectRepo.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+        if(project.getUsers().stream().noneMatch(u -> u.getUsername().equals(username))){
+            throw new RuntimeException("Unauthorized");
+        }
 
         // Build and return DTO
         return convertToProjectDetailedDto(project);

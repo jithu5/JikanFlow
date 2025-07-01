@@ -4,16 +4,17 @@ import { CalendarDays, Clock4, StickyNote, Eye } from 'lucide-react';
 
 interface Props {
     task: {
-        title: string;
+        name: string;
         color: string;
-        desc: string;
+        description: string;
         time: string;
         notes: number;
         due: string;
         priority: string;
-        id: number;
-        status:string
-    };
+        id: string;
+        orderIndex: number;
+        projectId: string;
+}
 }
 
 function TaskList({ task }: Props) {
@@ -36,9 +37,9 @@ function TaskList({ task }: Props) {
             <div className="flex justify-between items-start">
                 <div>
                     <h4 className="font-semibold text-gray-800 text-base mb-1">
-                        {task.title}
+                        {task.name}
                     </h4>
-                    <p className="text-sm text-gray-500 line-clamp-2">{task.desc}</p>
+                    <p className="text-sm text-gray-500 line-clamp-2">{task.description}</p>
                 </div>
                 <span
                     className={`w-3 h-3 mt-1 rounded-full ${task.color}`}

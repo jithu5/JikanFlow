@@ -26,37 +26,25 @@ public class TaskWebSocketController {
     private final SimpMessagingTemplate messagingTemplate;
     private final UserService userService;
 
-    private boolean isUserMemberOfProject(String username, UUID projectId) {
-        ProjectResDto project = projectService.findProjectById(projectId);
-        return project.getUsers().stream().anyMatch(u -> u.getUsername().equals(username));
-    }
 
     @MessageMapping("/task-drag-started")
     public void handleTaskBeingDragged(Map<String, Object> message, Principal principal) {
-        String username = principal.getName();
-        User user = userService.findByUsername(username);
         UUID projectId = UUID.fromString((String) message.get("projectId"));
 
-        ProjectResDto project = projectService.findProjectById(projectId);
+        ProjectResDto project = projectService.findProjectById(projectId,principal);
 
-        if (!isUserMemberOfProject(username, projectId)) {
-            throw new RuntimeException("User is not a member of the project");
-        }
         messagingTemplate.convertAndSend("/topic/project/" + projectId, message);
     }
 
 
     @MessageMapping("/update-tasks")
     public void updateTasks(KanbanUpdateReqDto message, Principal principal) {
-        String username = principal.getName();
-        User user = userService.findByUsername(username);
+
         UUID projectId = message.getProjectId();
 
-        ProjectResDto project = projectService.findProjectById(projectId);
+        ProjectResDto project = projectService.findProjectById(projectId,principal);
 
-        if (!isUserMemberOfProject(username, projectId)) {
-            throw new RuntimeException("User is not a member of the project");
-        }
+
 
         List<UpdateTaskReqDto> updatedTasks = message.getUpdatedTasks();
 
