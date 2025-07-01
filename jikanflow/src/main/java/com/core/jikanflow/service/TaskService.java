@@ -7,18 +7,18 @@ import com.core.jikanflow.repository.ProjectRepo;
 import com.core.jikanflow.repository.TaskRepo;
 import com.core.jikanflow.repository.UserRepo;
 import com.core.jikanflow.requestDTOS.TaskReqDto;
-import com.core.jikanflow.requestDTOS.UpdateTaskReqDto;
 import com.core.jikanflow.responseDTOS.NoteResDto;
 import com.core.jikanflow.responseDTOS.TaskResDto;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.security.Principal;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -100,9 +100,10 @@ public class TaskService {
         return taskResDto;
     }
 
-    public void saveTaskPositions(UUID projectId, List<UpdateTaskReqDto> updatedTasks) {
+    @Transactional
+    public void saveTaskPositions(UUID projectId, int index, UUID taskId, String toStatus, Principal principal) {
         // Authenticate user
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        String username = principal.getName();
         User user = userRepo.findByUsername(username).orElseThrow(
                 () -> new UsernameNotFoundException("User not found")
         );
@@ -116,26 +117,20 @@ public class TaskService {
             throw new RuntimeException("Unauthorized to update tasks for this project");
         }
 
-        // Fetch all involved task IDs
-        List<UUID> taskIds = updatedTasks.stream()
-                .map(UpdateTaskReqDto::getId)
-                .toList();
+        Task task = taskRepo.findById(taskId).orElseThrow(
+                ()-> new RuntimeException("Task not found")
+        );
 
-        List<Task> existingTasks = taskRepo.findAllById(taskIds);
-
-        // Map by ID for efficient update
-        Map<UUID, Task> taskMap = existingTasks.stream()
-                .collect(Collectors.toMap(Task::getId, t -> t));
-
-        for (UpdateTaskReqDto dto : updatedTasks) {
-            Task task = taskMap.get(dto.getId());
-            if (task != null) {
-                task.setOrderIndex(dto.getOrderIndex());
-                task.setStatus(dto.getStatus()); // already decided by frontend
-            }
+        if (task.getStatus().equals(toStatus)){
+            task.setOrderIndex(index);
+            taskRepo.save(task);
+        }else{
+            if (Objects.equals(toStatus, "IN PROGRESS"))
+                toStatus = "IN_PROGRESS";
+            task.setStatus(toStatus);
+            task.setOrderIndex(index);
+            taskRepo.save(task);
         }
-
-        taskRepo.saveAll(taskMap.values());
     }
 
     public List<TaskResDto> findTaskByProjectId(UUID projectId) {
@@ -172,5 +167,38 @@ public class TaskService {
         }).toList();
     }
 
+    @Transactional
+    public TaskResDto findTaskByIdForSocket(UUID taskId, Principal principal) {
 
+        String username = principal.getName();
+        User user = userRepo.findByUsername(username).orElseThrow(
+                ()-> new UsernameNotFoundException("User not found")
+        );
+        Task task = taskRepo.findById(taskId).orElseThrow(
+                ()-> new RuntimeException("Task not found")
+        );
+
+        TaskResDto taskResDto = new TaskResDto();
+
+        taskResDto.setId(task.getId());
+        taskResDto.setName(task.getName());
+        taskResDto.setDescription(task.getDescription());
+        taskResDto.setStatus(task.getStatus());
+        taskResDto.setPriority(task.getPriority());
+        taskResDto.setOrderIndex(task.getOrderIndex());
+        taskResDto.setDue(task.getDue());
+        task.setCreatedAt(task.getCreatedAt());
+        taskResDto.setNotes(task.getNotes().stream().map( n ->{
+                    NoteResDto noteResDto = new NoteResDto();
+
+                    noteResDto.setId(n.getId());
+                    noteResDto.setSubject(n.getSubject());
+                    noteResDto.setBody(n.getBody());
+                    noteResDto.setCreatedAt(n.getCreatedAt());
+
+                    return noteResDto;
+                }).toList()
+        );
+        return taskResDto;
+    }
 }

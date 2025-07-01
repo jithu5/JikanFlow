@@ -27,6 +27,7 @@ export interface ITask {
     projectId: string; // UUID
 }
   
+// Mutation (ADDING) Queries
 
 export const useRegisterUser = () => {
     return useMutation({
@@ -73,6 +74,8 @@ export const useAddTask = (token: string)=>{
     })
 }
 
+// Fetching Queries
+
 export const useFetchAllProjects = (token: string) => {
     
     return useQuery({
@@ -113,3 +116,5 @@ export const useFetchTasks = (token: string, projectId: string)=>{
         enabled: !!token
     })
 }
+
+// Mutation (UPDATION) Queries

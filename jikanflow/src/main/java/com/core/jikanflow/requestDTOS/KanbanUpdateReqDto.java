@@ -8,5 +8,7 @@ import java.util.UUID;
 @Data
 public class KanbanUpdateReqDto {
     private UUID projectId;
-    public List<UpdateTaskReqDto> UpdatedTasks;
+    public int index;
+    private UUID taskId;
+    private String toStatus;
 }

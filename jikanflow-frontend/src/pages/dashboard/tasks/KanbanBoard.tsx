@@ -221,6 +221,7 @@ function KanbanBoard() {
             setActiveTask(null);
             return;
         }
+        const stompClient = getStompClient();
 
         const fromColumn = activeTask.status;
         let toColumn: string | undefined = undefined;
@@ -285,6 +286,17 @@ function KanbanBoard() {
 
                 movedTask.orderIndex = newOrderIndex;
 
+                stompClient.publish({
+                    destination: "/app/update-tasks",
+                    body: JSON.stringify({
+                        projectId: project_id,
+                        index: newOrderIndex,
+                        taskId: activeTask.id,
+                        toStatus: toColumn
+                    }),
+                });
+
+
                 return { ...prev, [fromColumn]: list };
             });
 
@@ -305,16 +317,40 @@ function KanbanBoard() {
                     toList.push(moved);
                 }
 
-                // ✅ Recalculate orderIndex for both columns
-                const updatedFrom = fromList.map((task, idx) => ({ ...task, orderIndex: idx*100 }));
-                const updatedTo = toList.map((task, idx) => ({ ...task, orderIndex: idx*100 }));
-                console.log(fromColumn)
-                console.log(toColumn)
-                return {
-                    ...prev,
-                    [fromColumn]: updatedFrom,
-                    [toColumn!]: updatedTo,
-                };
+                // 🔢 Calculate new fractional index
+                let prevTask, nextTask;
+                if (toIndex !== null) {
+                    prevTask = toList[toIndex - 1];
+                    nextTask = toList[toIndex + 1];
+                } else {
+                    prevTask = undefined;
+                    nextTask = undefined;
+                }
+
+                let newOrderIndex: number;
+                if (prevTask && nextTask) {
+                    newOrderIndex = (prevTask.orderIndex + nextTask.orderIndex) / 2;
+                } else if (!prevTask && nextTask) {
+                    newOrderIndex = nextTask.orderIndex - 100;
+                } else if (prevTask && !nextTask) {
+                    newOrderIndex = prevTask.orderIndex + 100;
+                } else {
+                    newOrderIndex = 0; // Fallback for only one task
+                }
+
+                moved.orderIndex = newOrderIndex;
+
+                stompClient.publish({
+                    destination: "/app/update-tasks",
+                    body: JSON.stringify({
+                        projectId: project_id,
+                        index: newOrderIndex,
+                        taskId: activeTask.id,
+                        toStatus: toColumn
+                    }),
+                });
+
+                return { ...prev, [fromColumn]: fromList,[toColumn]: toList};
             });
         }
 

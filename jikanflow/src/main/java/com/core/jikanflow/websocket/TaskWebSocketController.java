@@ -30,33 +30,36 @@ public class TaskWebSocketController {
 
     @MessageMapping("/task-drag-started")
     public void handleTaskBeingDragged(Map<String, Object> message, Principal principal) {
-        String username = principal.getName();
 
-        User user = userService.findByUsername(username);
         UUID projectId = UUID.fromString((String) message.get("projectId"));
         UUID taskId = UUID.fromString((String) message.get("taskId"));
 
-        ProjectResDto project = projectService.findProjectByIdForSocket(projectId);
+        ProjectResDto project = projectService.findProjectByIdForSocket(projectId,principal);
 
-        if (project.getUsers().stream().noneMatch(u-> u.getUsername().equals(username))){
-            throw new RuntimeException("Unauthorized");
-        }
-        TaskResDto taskResDto = taskService.findTaskById(taskId);
+        TaskResDto taskResDto = taskService.findTaskByIdForSocket(taskId,principal);
 
-        messagingTemplate.convertAndSend("/topic/project/" + projectId, username + " " + message + " "+taskResDto.getName());
+        messagingTemplate.convertAndSend("/topic/project/" + projectId,  Map.of("message", "Moving to "+ taskResDto.getName())
+        );
     }
 
 
     @MessageMapping("/update-tasks")
-    public void updateTasks(KanbanUpdateReqDto message, Principal principal) {
+    public void updateTasks(KanbanUpdateReqDto message,Principal principal) {
         UUID projectId = message.getProjectId();
 
-        ProjectResDto project = projectService.findProjectByIdForSocket(projectId);
+        ProjectResDto project = projectService.findProjectByIdForSocket(projectId,principal);
 
-        List<UpdateTaskReqDto> updatedTasks = message.getUpdatedTasks();
+        if (project == null){
+            throw new RuntimeException("Project not found");
+        }
 
-//        taskService.saveTaskPositions(projectId, updatedTasks);  // cleaner method
-        messagingTemplate.convertAndSend("/topic/project/" + projectId, message);
+        int index = message.getIndex();
+        UUID removableTaskId = message.getTaskId();
+        String toStatus = message.getToStatus();
+
+        taskService.saveTaskPositions(projectId, index, removableTaskId, toStatus,principal);  // cleaner method
+        messagingTemplate.convertAndSend("/topic/project/" + projectId, Map.of("message", "Moved to "+ toStatus)
+        );
     }
 
 }

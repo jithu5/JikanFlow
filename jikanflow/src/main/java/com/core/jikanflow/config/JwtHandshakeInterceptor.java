@@ -53,7 +53,7 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
                 SecurityContext context = SecurityContextHolder.createEmptyContext();
                 context.setAuthentication(authentication);
                 SecurityContextHolder.setContext(context);
-                log.info(context.getAuthentication().getName());
+                log.info("In JWT handshake "+context.getAuthentication().getName());
                 return true;
             } else {
                 log.warn("❌ Invalid JWT token");
