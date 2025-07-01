@@ -145,19 +145,10 @@ public class ProjectService {
     }
 
     @Transactional
-    public ProjectResDto findProjectById(UUID projectId, Principal principal) {
-        String username = principal.getName();
-
-        // Get authenticated user
-        User user = userRepo.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+    public ProjectResDto findProjectByIdForSocket(UUID projectId) {
         // Fetch project
         Project project = projectRepo.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
-        if(project.getUsers().stream().noneMatch(u -> u.getUsername().equals(username))){
-            throw new RuntimeException("Unauthorized");
-        }
 
         // Build and return DTO
         return convertToProjectDetailedDto(project);
@@ -188,4 +179,5 @@ public class ProjectService {
             projectRepo.save(project);
         }
     }
+
 }

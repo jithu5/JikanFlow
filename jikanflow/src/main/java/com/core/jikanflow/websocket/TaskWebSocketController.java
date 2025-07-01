@@ -4,6 +4,7 @@ import com.core.jikanflow.entities.User;
 import com.core.jikanflow.requestDTOS.KanbanUpdateReqDto;
 import com.core.jikanflow.requestDTOS.UpdateTaskReqDto;
 import com.core.jikanflow.responseDTOS.ProjectResDto;
+import com.core.jikanflow.responseDTOS.TaskResDto;
 import com.core.jikanflow.service.ProjectService;
 import com.core.jikanflow.service.TaskService;
 import com.core.jikanflow.service.UserService;
@@ -29,22 +30,28 @@ public class TaskWebSocketController {
 
     @MessageMapping("/task-drag-started")
     public void handleTaskBeingDragged(Map<String, Object> message, Principal principal) {
+        String username = principal.getName();
+
+        User user = userService.findByUsername(username);
         UUID projectId = UUID.fromString((String) message.get("projectId"));
+        UUID taskId = UUID.fromString((String) message.get("taskId"));
 
-        ProjectResDto project = projectService.findProjectById(projectId,principal);
+        ProjectResDto project = projectService.findProjectByIdForSocket(projectId);
 
-        messagingTemplate.convertAndSend("/topic/project/" + projectId, message);
+        if (project.getUsers().stream().noneMatch(u-> u.getUsername().equals(username))){
+            throw new RuntimeException("Unauthorized");
+        }
+        TaskResDto taskResDto = taskService.findTaskById(taskId);
+
+        messagingTemplate.convertAndSend("/topic/project/" + projectId, username + " " + message + " "+taskResDto.getName());
     }
 
 
     @MessageMapping("/update-tasks")
     public void updateTasks(KanbanUpdateReqDto message, Principal principal) {
-
         UUID projectId = message.getProjectId();
 
-        ProjectResDto project = projectService.findProjectById(projectId,principal);
-
-
+        ProjectResDto project = projectService.findProjectByIdForSocket(projectId);
 
         List<UpdateTaskReqDto> updatedTasks = message.getUpdatedTasks();
 

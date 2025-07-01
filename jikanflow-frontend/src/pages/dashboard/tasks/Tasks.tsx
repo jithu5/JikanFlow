@@ -10,10 +10,9 @@ interface Props {
         color: string;
         label: string;
     };
-    activeTask: ITask | null;
 }
 
-function Tasks({ tasks, col, activeTask }: Props) {
+function Tasks({ tasks, col }: Props) {
     const taskList = tasks[col.title] || [];
     const { setNodeRef } = useDroppable({
         id: col.title, // this is what `over.id` will be during a drop over empty column

@@ -18,23 +18,23 @@ import Tasks from "./Tasks";
 import AddTask from "./AddTask";
 import { getStompClient } from "../../../lib/socket";
 import { useParams } from "react-router-dom";
-import { useAddTask } from "@/apiQuery/apiQuery";
+import { useAddTask, useFetchTasks } from "@/apiQuery/apiQuery";
 import useUserStore from "@/store/user";
+import toast from "react-hot-toast";
 
 export interface IForm {
     name: string;
     description: string;
-    status: string;
+    priority: string;
+    due: string;
+    status: string
 }
 
 export interface ITask extends IForm {
-    time: string;
+    orderIndex: number,
     notes: number;
-    priority: string;
-    due: string;
-    id: string;
-    orderIndex: number;
     projectId: string;
+    id: string
 }
 
 export type TaskMap = {
@@ -45,6 +45,7 @@ function KanbanBoard() {
     const [activeTask, setActiveTask] = useState<ITask | null>(null);
     const { projectId: project_id } = useParams<{ projectId: string }>();
     const { token } = useUserStore();
+    const { data, error, isLoading } = useFetchTasks(token, project_id!);
 
     useEffect(() => {
         const client = getStompClient();
@@ -67,6 +68,21 @@ function KanbanBoard() {
             }
         };
     }, [project_id]);
+
+    useEffect(() => {
+        if (data && !error && !isLoading) {
+            console.log(data)
+            setTasks((prev: TaskMap): TaskMap => ({
+                ...prev,
+                TODO: data.filter((d: ITask) => d.status === "TODO"),
+                "IN PROGRESS": data.filter((d: ITask) => d.status === "IN_PROGRESS"),
+                HOLD: data.filter((d: ITask) => d.status === "HOLD"),
+                REMOVE: data.filter((d: ITask) => d.status === "REMOVE"),
+                DONE: data.filter((d: ITask) => d.status === "DONE"),
+            }));
+        }
+        
+    }, [project_id, data, error, isLoading])
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -93,22 +109,14 @@ function KanbanBoard() {
         name: "",
         description: "",
         status: "TODO",
+        priority: "MEDIUM",
+        due: "",
     });
 
     const addTaskMutation = useAddTask(token);
 
     const handleAddTask = async () => {
-        const tempTask: ITask = {
-            ...form,
-            time: "00:00:00",
-            notes: 0,
-            priority: "MEDIUM",
-            due: "2025-07-01",
-            id: String(Date.now()),
-            orderIndex: tasks[form.status].length,
-            projectId: project_id ?? "",
-        };
-         interface ITaskSend {
+        interface ITaskSend {
             name: string;
             description: string;
             status: "TODO" | "IN_PROGRESS" | "HOLD" | "REMOVE" | "DONE";
@@ -117,14 +125,19 @@ function KanbanBoard() {
             due: string; // ISO date string, e.g., "2025-07-01"
             projectId: string; // UUID
         }
-        const toSend:ITaskSend= {
-            description: tempTask.description,
-            name: tempTask.name,
-            priority: tempTask.priority as "MEDIUM" | "LOW" | "HIGH",
-            due: tempTask.due,
-            status: tempTask.status === "IN PROGRESS" ? "IN_PROGRESS" : tempTask.status as "TODO" | "HOLD" | "REMOVE" | "DONE" | "IN_PROGRESS",
-            orderIndex: tempTask.orderIndex,
-            projectId: tempTask.projectId,
+        const toSend: ITaskSend = {
+            ...form,
+            orderIndex: tasks[form.status].length * 100,
+            projectId: project_id ?? "",
+            status: form.status === "IN PROGRESS" ? "IN_PROGRESS"
+                : form.status === "TODO" ? "TODO"
+                    : form.status === "HOLD" ? "HOLD"
+                        : form.status === "REMOVE" ? "REMOVE"
+                            : form.status === "DONE" ? "DONE"
+                                : "TODO",
+            name: form.name,
+            priority: form.priority as "MEDIUM" | "LOW" | "HIGH",
+            due: form.due,
         };
 
         try {
@@ -133,11 +146,13 @@ function KanbanBoard() {
                 ...prev,
                 [form.status]: [...prev[form.status], savedTask],
             }));
-        } catch (err) {
+            toast.success("Task added successfully")
+        } catch (err:any) {
             console.error("❌ Error adding task:", err);
+            toast.error(err?.response?.data)
         }
 
-        setForm({ name: "", description: "", status: "TODO" });
+        setForm({ name: "", description: "", status: "TODO", due: "", priority: "MEDIUM" });
         setIsOpen(false);
     };
 
@@ -154,8 +169,9 @@ function KanbanBoard() {
                 stompClient.publish({
                     destination: "/app/task-drag-started",
                     body: JSON.stringify({
-                        message:"Task is moving",
-                        projectId:project_id
+                        message: `Task is moving by`,
+                        taskId: active.id,
+                        projectId: project_id
                     }),
                 });
 
@@ -170,7 +186,7 @@ function KanbanBoard() {
 
         const fromStatus = activeTask.status;
         let toStatus: string | undefined = undefined;
-        let toIndex: number | null = null;
+        // let toIndex: number | null = null;
 
         for (const status in tasks) {
             const found = tasks[status].find((t) => t.id === over.id);
@@ -236,20 +252,45 @@ function KanbanBoard() {
             setTasks((prev) => {
                 const list = [...prev[toColumn]];
                 const taskIndex = list.findIndex((t) => t.id === active.id);
+
+                // Remove the dragged task
                 const [movedTask] = list.splice(taskIndex, 1);
 
                 if (toIndex !== null) {
-                    list.splice(toIndex, 0, movedTask);
+                    list.splice(toIndex, 0, movedTask); // Insert at new index
                 } else {
-                    list.push(movedTask);
+                    list.push(movedTask); // Append if no index
                 }
 
-                // ✅ Recalculate orderIndex
-                const reordered = list.map((task, idx) => ({ ...task, orderIndex: idx }));
+                // 🔢 Calculate new fractional index
+                let prevTask, nextTask;
+                if (toIndex !== null) {
+                    prevTask = list[toIndex - 1];
+                    nextTask = list[toIndex + 1];
+                } else {
+                    prevTask = undefined;
+                    nextTask = undefined;
+                }
 
-                return { ...prev, [fromColumn]: reordered };
+                let newOrderIndex: number;
+                if (prevTask && nextTask) {
+                    newOrderIndex = (prevTask.orderIndex + nextTask.orderIndex) / 2;
+                } else if (!prevTask && nextTask) {
+                    newOrderIndex = nextTask.orderIndex - 1;
+                } else if (prevTask && !nextTask) {
+                    newOrderIndex = prevTask.orderIndex + 1;
+                } else {
+                    newOrderIndex = 0; // Fallback for only one task
+                }
+
+                movedTask.orderIndex = newOrderIndex;
+
+                return { ...prev, [fromColumn]: list };
             });
+
+            // 🔁 Optionally: send movedTask to backend here with new orderIndex
         }
+        
 
         // 🔁 MOVED TO NEW COLUMN
         else {
@@ -265,9 +306,10 @@ function KanbanBoard() {
                 }
 
                 // ✅ Recalculate orderIndex for both columns
-                const updatedFrom = fromList.map((task, idx) => ({ ...task, orderIndex: idx }));
-                const updatedTo = toList.map((task, idx) => ({ ...task, orderIndex: idx }));
-
+                const updatedFrom = fromList.map((task, idx) => ({ ...task, orderIndex: idx*100 }));
+                const updatedTo = toList.map((task, idx) => ({ ...task, orderIndex: idx*100 }));
+                console.log(fromColumn)
+                console.log(toColumn)
                 return {
                     ...prev,
                     [fromColumn]: updatedFrom,
@@ -278,7 +320,7 @@ function KanbanBoard() {
 
         setActiveTask(null);
     };
-    
+
 
     return (
         <div className="p-4 md:p-6 bg-white min-h-screen relative">
@@ -305,7 +347,7 @@ function KanbanBoard() {
                             <div className={`px-4 py-3 font-semibold text-sm uppercase ${col.label} bg-gray-100 sticky top-0 z-10 border-b`}>
                                 {col.title}
                             </div>
-                            <Tasks tasks={tasks} col={col} activeTask={activeTask} />
+                            <Tasks tasks={tasks} col={col} />
                         </div>
                     ))}
                 </div>
@@ -318,17 +360,16 @@ function KanbanBoard() {
                                     {activeTask.name}
                                 </h4>
                                 <span className={`text-xs font-semibold px-2 py-1 rounded-full ${activeTask.priority === "High"
-                                        ? "bg-red-100 text-red-600"
-                                        : activeTask.priority === "Low"
-                                            ? "bg-green-100 text-green-600"
-                                            : "bg-yellow-100 text-yellow-600"
+                                    ? "bg-red-100 text-red-600"
+                                    : activeTask.priority === "Low"
+                                        ? "bg-green-100 text-green-600"
+                                        : "bg-yellow-100 text-yellow-600"
                                     }`}>
                                     {activeTask.priority}
                                 </span>
                             </div>
                             <p className="text-xs text-gray-500 line-clamp-2">{activeTask.description}</p>
                             <div className="flex justify-between items-center mt-3 text-gray-400 text-xs">
-                                <div className="flex items-center gap-1">⏱️ {activeTask.time}</div>
                                 <div className="flex items-center gap-1">📝 {activeTask.notes} notes</div>
                             </div>
                         </div>

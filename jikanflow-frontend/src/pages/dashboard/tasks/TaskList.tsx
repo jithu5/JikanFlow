@@ -7,7 +7,6 @@ interface Props {
         name: string;
         color: string;
         description: string;
-        time: string;
         notes: number;
         due: string;
         priority: string;
@@ -19,7 +18,7 @@ interface Props {
 
 function TaskList({ task }: Props) {
     const { setNodeRef, attributes, listeners, transform, transition } = useSortable({ id: task.id });
-
+    // console.log(task)
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
@@ -50,10 +49,7 @@ function TaskList({ task }: Props) {
             {/* Info Rows */}
             <div className="mt-3 space-y-1 text-sm text-gray-600">
                 <div className="flex justify-between">
-                    <span className="flex items-center gap-1">
-                        <Clock4 className="w-4 h-4 text-blue-400" />
-                        {task.time}
-                    </span>
+                 
                     <span className="flex items-center gap-1">
                         <StickyNote className="w-4 h-4 text-yellow-400" />
                         {task.notes}
