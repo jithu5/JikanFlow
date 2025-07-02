@@ -8,13 +8,17 @@ import {
   LandingPage
 } from "../pages/index"
 import { useEffect, useState, type JSX } from "react"
-import useUserStore from "@/store/userToken"
+import useUserTokenStore from "@/store/userToken"
 import AuthMiddleware from "@/AuthMiddleware/authMiddleware"
+import { useFetchUserData } from "@/apiQuery/apiQuery"
+import useUserStore from "@/store/user"
 
 const AppRouter = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const { token, setToken } = useUserStore()
+  const { token, setToken } = useUserTokenStore()
+  const { setUser } = useUserStore()
+  const { data, error, isLoading: isUserLoading } = useFetchUserData(token);
 
   useEffect(() => {
     // ✅ Even safer (remove quotes manually if you're unsure)
@@ -30,6 +34,13 @@ const AppRouter = () => {
     }
     setIsLoading(false)
   }, [])
+
+  useEffect(() => {
+    if (token && !isUserLoading && !error) {
+      console.log("User token ",data)
+      setUser(data);
+    }
+  }, [isUserLoading,error])
 
   const ProtectedRoute = (element: JSX.Element) => (
     <AuthMiddleware isAuthenticated={isAuthenticated} isLoading={isLoading}>

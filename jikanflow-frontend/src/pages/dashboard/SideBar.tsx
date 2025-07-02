@@ -28,7 +28,7 @@ function SideBar() {
             {/* Mobile Toggle Button */}
             <button
                 onClick={() => setOpen(!open)}
-                className="md:hidden p-2 fixed top-4 left-4 z-50 bg-white rounded shadow-md"
+                className="p-2 fixed top-4 left-4 z-50 bg-stone-900 text-white rounded shadow-md cursor-pointer"
             >
                 <Menu />
             </button>
@@ -36,7 +36,7 @@ function SideBar() {
             {/* Sidebar */}
             <div
                 className={`fixed top-0 left-0 h-screen bg-gray-900 text-white w-48 p-6 transform transition-transform duration-300 ease-in-out z-40 ${open ? "translate-x-0" : "-translate-x-full"
-                    } md:translate-x-0 md:static md:block`}
+                    }`}
             >
                 <Link to={"/"} className="text-2xl font-bold mb-8">JikanFlow</Link>
 

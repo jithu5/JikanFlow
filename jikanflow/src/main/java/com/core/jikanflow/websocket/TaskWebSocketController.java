@@ -33,12 +33,14 @@ public class TaskWebSocketController {
 
         UUID projectId = UUID.fromString((String) message.get("projectId"));
         UUID taskId = UUID.fromString((String) message.get("taskId"));
+        String username = (String) message.get("username");
+        String type = (String) message.get("type");
 
         ProjectResDto project = projectService.findProjectByIdForSocket(projectId,principal);
 
         TaskResDto taskResDto = taskService.findTaskByIdForSocket(taskId,principal);
 
-        messagingTemplate.convertAndSend("/topic/project/" + projectId,  Map.of("message", "Moving to "+ taskResDto.getName())
+        messagingTemplate.convertAndSend("/topic/project/" + projectId,  Map.of("message", "Moving to "+ taskResDto.getName() + " by " + username ,"type","TASK_DRAG_START")
         );
     }
 
@@ -56,9 +58,16 @@ public class TaskWebSocketController {
         int index = message.getIndex();
         UUID removableTaskId = message.getTaskId();
         String toStatus = message.getToStatus();
+        String username = message.getUsername();
 
         taskService.saveTaskPositions(projectId, index, removableTaskId, toStatus,principal);  // cleaner method
-        messagingTemplate.convertAndSend("/topic/project/" + projectId, Map.of("message", "Moved to "+ toStatus)
+        messagingTemplate.convertAndSend("/topic/project/" + projectId,Map.of(
+                        "type", "TASK_DRAG_END",
+                        "toStatus", toStatus,
+                        "index",index,
+                        "username",username,
+                "taskId",removableTaskId
+                )
         );
     }
 

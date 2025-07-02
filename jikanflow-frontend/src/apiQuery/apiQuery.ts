@@ -117,4 +117,23 @@ export const useFetchTasks = (token: string, projectId: string)=>{
     })
 }
 
+export const useFetchUserData = (token: string)=>{
+    return useQuery({
+        queryKey:["user-data"],
+        queryFn:async()=>{
+           try {
+             const res = await api.get("/api/main/user/data",{
+                 headers:{
+                     Authorization: `Bearer ${token}`
+                 }
+             })
+             return res.data ?? []
+           } catch (error) {
+            return error;
+           }
+        },
+        enabled: !!token
+    })
+}
+
 // Mutation (UPDATION) Queries

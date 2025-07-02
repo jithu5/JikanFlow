@@ -11,4 +11,6 @@ public class KanbanUpdateReqDto {
     public int index;
     private UUID taskId;
     private String toStatus;
+    private String type;
+    private String username;
 }

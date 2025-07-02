@@ -1,4 +1,4 @@
-# 🚀 Jikanflow – Unified Productivity System for Freelancers & Creators
+# 🚀 Jikanflow – Project Management Productivity System
 
 > 🧠 Manage tasks, track time, take notes, and receive reminders — all in one place.
 
@@ -21,7 +21,7 @@ We appreciate your interest and welcome feedback, but please note that the syste
 - ⏱️ Time tracking per task
 - 📝 Notes per task
 - 🔔 Smart reminders via email
-- 📦 Microservice architecture with Spring Boot
+- 📦 Microservice architecture with Spring Boot and Express
 - 🐇 RabbitMQ for async communication
 
 ---
@@ -48,7 +48,7 @@ Coming soon...
                    |                                               |
         +----------v----------+                         +----------v----------+
         |   core-service       |                         |   notify-service     |
-        | Spring Boot + JPA    |                         | Spring Boot + Rabbit |
+        | Spring Boot + JPA    |                         | Express + Rabbit |
         | Handles:             |                         | Sends reminders,     |
         | - Auth (JWT)         |                         | listens to RabbitMQ  |
         | - Projects, Tasks    |                         +----------------------+

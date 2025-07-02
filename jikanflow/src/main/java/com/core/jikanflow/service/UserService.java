@@ -6,6 +6,7 @@ import com.core.jikanflow.repository.UserRepo;
 import com.core.jikanflow.requestDTOS.LoginDto;
 import com.core.jikanflow.requestDTOS.RegisterDto;
 import com.core.jikanflow.responseDTOS.JwtResponse;
+import com.core.jikanflow.responseDTOS.UserResDto;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -57,5 +58,17 @@ public class UserService {
         return userRepo.findByUsername(username).orElseThrow(
                 ()-> new UsernameNotFoundException("User not found")
         );
+    }
+
+
+    public UserResDto getUserData() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        User user = findByUsername(username);
+
+        UserResDto userResDto = new UserResDto();
+        userResDto.setUsername(user.getUsername());
+        userResDto.setEmail(user.getEmail());
+        return userResDto;
     }
 }
