@@ -8,7 +8,7 @@ import {
   LandingPage
 } from "../pages/index"
 import { useEffect, useState, type JSX } from "react"
-import useUserStore from "@/store/user"
+import useUserStore from "@/store/userToken"
 import AuthMiddleware from "@/AuthMiddleware/authMiddleware"
 
 const AppRouter = () => {

@@ -1,12 +1,29 @@
-import {create} from "zustand";
+import { create } from "zustand";
 
-interface UserState {
-    token: string;
-    setToken: (token: string) => void;
+interface IUser {
+    username: string;
+    email: string;
 }
 
-const useUserStore = create<UserState>((set) => ({
-    token: '',
-    setToken: (token: string) => set({ token }),
+interface IUserStore {
+    user: IUser;
+    setUser: (user: IUser) => void;
+    removeUser: () => void;
+}
+
+const useUserStore = create<IUserStore>((set) => ({
+    user: {
+        username: "",
+        email: "",
+    },
+    setUser: (user: IUser) => set({ user }),
+    removeUser: () =>
+        set({
+            user: {
+                username: "",
+                email: "",
+            },
+        }),
 }));
+
 export default useUserStore;

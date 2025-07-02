@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea"; // if you have it
 import { useState } from "react";
 import { useAddProject } from "@/apiQuery/apiQuery";
-import useUserStore from "@/store/user";
+import useUserStore from "@/store/userToken";
 import toast from "react-hot-toast";
 import useProjectStore from "@/store/projetcs";
 
@@ -22,7 +22,7 @@ function AddProject() {
     const [title, setTitle] = useState<string>("");
     const [description, setDescription] = useState<string>("");
     const { token } = useUserStore()
-    const {addProject} = useProjectStore()
+    const { addProject } = useProjectStore()
 
     const useAddProjectMutation = useAddProject(token)
 

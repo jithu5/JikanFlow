@@ -1,5 +1,5 @@
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import type { ITask, TaskMap } from './KanbanBoard';
+import type { TaskMap } from './KanbanBoard';
 import TaskList from './TaskList';
 import { useDroppable } from '@dnd-kit/core';
 
@@ -23,16 +23,20 @@ function Tasks({ tasks, col }: Props) {
                 items={taskList.map(task => task.id)} // use stable IDs
                 strategy={verticalListSortingStrategy}
             >
-                {taskList.map((task) => (
-                    <TaskList
-                        key={task.id}
-                        task={{
-                            ...task,
-                            id: String(task.id),
-                            color: col.color
-                        }}
-                    />
-                ))}
+                {/* Makes a shallow copy of tasks and sort it with orderIndex and map it to UI */}
+                {[...taskList]
+                    .sort((a, b) => a.orderIndex - b.orderIndex)
+                    .map((task) => (
+                        <TaskList
+                            key={task.id}
+                            task={{
+                                ...task,
+                                id: String(task.id),
+                                color: col.color
+                            }}
+                        />
+                    ))}
+
             </SortableContext>
         </div>
     );

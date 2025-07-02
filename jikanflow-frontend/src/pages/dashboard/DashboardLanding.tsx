@@ -2,7 +2,7 @@ import { useFetchAllProjects } from "@/apiQuery/apiQuery";
 import { AddProject } from "@/components";
 import { Button } from "@/components/ui/button";
 import useProjectStore from "@/store/projetcs";
-import useUserStore from "@/store/user";
+import useUserStore from "@/store/userToken";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 

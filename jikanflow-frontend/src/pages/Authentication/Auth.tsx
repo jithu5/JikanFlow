@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import useUserStore from "@/store/user"
+import useUserStore from "@/store/userToken"
 import { useForm } from "react-hook-form"
 import toast from "react-hot-toast"
 import { useNavigate } from "react-router-dom"
@@ -28,7 +28,7 @@ type SignupForm = {
 
 function Auth() {
 
-    const {setToken} = useUserStore();
+    const { setToken } = useUserStore();
     const navigate = useNavigate();
     const {
         register: registerLogin,
@@ -49,16 +49,16 @@ function Auth() {
         // await loginMutation.mutateAsync(data)
         try {
             const responseData = await useLoginMutation.mutateAsync(data);
-            localStorage.setItem("token",JSON.stringify(responseData?.token))
+            localStorage.setItem("token", JSON.stringify(responseData?.token))
             setToken(responseData?.token);
             toast.success("User logged in successfully.")
             navigate("/")
         } catch (error: any) {
             toast.error(error?.response?.data)
-        }finally{
+        } finally {
             resetLogin()
         }
-          
+
     }
 
     const registerUserMutation = useRegisterUser();

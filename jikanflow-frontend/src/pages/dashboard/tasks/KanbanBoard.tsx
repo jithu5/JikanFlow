@@ -19,7 +19,7 @@ import AddTask from "./AddTask";
 import { getStompClient } from "../../../lib/socket";
 import { useParams } from "react-router-dom";
 import { useAddTask, useFetchTasks } from "@/apiQuery/apiQuery";
-import useUserStore from "@/store/user";
+import useUserTokenStore from "@/store/userToken";
 import toast from "react-hot-toast";
 
 export interface IForm {
@@ -43,9 +43,11 @@ export type TaskMap = {
 
 function KanbanBoard() {
     const [activeTask, setActiveTask] = useState<ITask | null>(null);
+    const [isUserMovingTask, setIsUserMovingTask] = useState<boolean>(false)
     const { projectId: project_id } = useParams<{ projectId: string }>();
-    const { token } = useUserStore();
+    const { token } = useUserTokenStore();
     const { data, error, isLoading } = useFetchTasks(token, project_id!);
+
 
     useEffect(() => {
         const client = getStompClient();
@@ -81,7 +83,7 @@ function KanbanBoard() {
                 DONE: data.filter((d: ITask) => d.status === "DONE"),
             }));
         }
-        
+
     }, [project_id, data, error, isLoading])
 
     const sensors = useSensors(
@@ -147,7 +149,7 @@ function KanbanBoard() {
                 [form.status]: [...prev[form.status], savedTask],
             }));
             toast.success("Task added successfully")
-        } catch (err:any) {
+        } catch (err: any) {
             console.error("❌ Error adding task:", err);
             toast.error(err?.response?.data)
         }
@@ -277,9 +279,9 @@ function KanbanBoard() {
                 if (prevTask && nextTask) {
                     newOrderIndex = (prevTask.orderIndex + nextTask.orderIndex) / 2;
                 } else if (!prevTask && nextTask) {
-                    newOrderIndex = nextTask.orderIndex - 1;
+                    newOrderIndex = nextTask.orderIndex - 100;
                 } else if (prevTask && !nextTask) {
-                    newOrderIndex = prevTask.orderIndex + 1;
+                    newOrderIndex = prevTask.orderIndex + 100;
                 } else {
                     newOrderIndex = 0; // Fallback for only one task
                 }
@@ -302,7 +304,7 @@ function KanbanBoard() {
 
             // 🔁 Optionally: send movedTask to backend here with new orderIndex
         }
-        
+
 
         // 🔁 MOVED TO NEW COLUMN
         else {
@@ -350,7 +352,7 @@ function KanbanBoard() {
                     }),
                 });
 
-                return { ...prev, [fromColumn]: fromList,[toColumn]: toList};
+                return { ...prev, [fromColumn]: fromList, [toColumn]: toList };
             });
         }
 
