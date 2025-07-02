@@ -40,7 +40,10 @@ public class TaskWebSocketController {
 
         TaskResDto taskResDto = taskService.findTaskByIdForSocket(taskId,principal);
 
-        messagingTemplate.convertAndSend("/topic/project/" + projectId,  Map.of("message", "Moving to "+ taskResDto.getName() + " by " + username ,"type","TASK_DRAG_START")
+        messagingTemplate.convertAndSend("/topic/project/" + projectId,  Map.of(
+                "message", "Moving to "+ taskResDto.getName() + " by " + username ,
+                "username",username,
+                "type","TASK_DRAG_START")
         );
     }
 
@@ -66,7 +69,7 @@ public class TaskWebSocketController {
                         "toStatus", toStatus,
                         "index",index,
                         "username",username,
-                "taskId",removableTaskId
+                        "taskId",removableTaskId
                 )
         );
     }

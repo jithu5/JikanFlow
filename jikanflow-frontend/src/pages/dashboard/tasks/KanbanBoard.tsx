@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Kanban, PlusCircle } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import {
     DndContext,
     PointerSensor,
@@ -19,7 +19,7 @@ import { useAddTask, useFetchTasks } from "@/apiQuery/apiQuery";
 import useUserTokenStore from "@/store/userToken";
 import toast from "react-hot-toast";
 import useUserStore from "@/store/user";
-import { Button } from "@/components/ui/button";
+import Header from "./Header";
 
 export interface IForm {
     name: string;
@@ -162,7 +162,7 @@ function KanbanBoard() {
             status: "TODO" | "IN_PROGRESS" | "HOLD" | "REMOVE" | "DONE";
             priority: "LOW" | "MEDIUM" | "HIGH";
             orderIndex: number;
-            due: string; // ISO date string, e.g., "2025-07-01"
+            due: string; 
             projectId: string; // UUID
         }
         const toSend: ITaskSend = {
@@ -331,13 +331,9 @@ function KanbanBoard() {
                 }),
             });
 
-
             return { ...prev, [fromColumn]: list };
         });
-
-        // 🔁 Optionally: send movedTask to backend here with new orderIndex
     }
-
 
     // 🔁 MOVED TO NEW COLUMN
     else {
@@ -397,33 +393,7 @@ function KanbanBoard() {
     return (
         <>
             <div className="p-4 md:p-6 bg-white min-h-screen relative">
-                <div className="mb-6 flex w-full px-10 justify-between items-center">
-                    <h2 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                        <Kanban className="w-6 h-6 text-blue-600" />
-                        Kanban Board
-                    </h2>
-                    <Button>Add Member</Button>
-                    {usersMoving.length > 0 && (
-                        <div className="flex items-center gap-2 mt-3 bg-yellow-50 text-yellow-800 px-4 py-2 border border-yellow-300 rounded-lg w-fit">
-                            <span className="font-semibold">Moving tasks:</span>
-                            {usersMoving.slice(0, 3).map((username, index) => {
-                                if (username !== user.username) {
-                                    return (
-                                        <span key={index} className="text-sm bg-white text-black px-2 py-0.5 rounded-full">
-                                            {username}
-                                        </span>
-                                    );
-                                }
-                                return null;
-                            })}
-                            {usersMoving.length > 3 && (
-                                <span className="text-sm text-yellow-800">+{usersMoving.length - 3} more</span>
-                            )}
-                        </div>
-                    )}
-                    {/* ✅ Add Member */}
-
-                </div>
+                <Header usersMoving={usersMoving} user={user} />
 
                 <DndContext
                     onDragStart={handleDragStart}
