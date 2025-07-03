@@ -201,4 +201,8 @@ public class TaskService {
         );
         return taskResDto;
     }
+
+    public void deleteTaskById(UUID taskId) {
+        taskRepo.deleteById(taskId);
+    }
 }

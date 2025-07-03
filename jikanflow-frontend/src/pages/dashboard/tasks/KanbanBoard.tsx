@@ -20,6 +20,7 @@ import useUserTokenStore from "@/store/userToken";
 import toast from "react-hot-toast";
 import useUserStore from "@/store/user";
 import Header from "./Header";
+import useTaskStore from "@/store/Task";
 
 export interface IForm {
     name: string;
@@ -40,16 +41,15 @@ export type TaskMap = {
     [key: string]: ITask[];
 };
 
+interface IUserDrag {
+    taskId: string;
+    username: string;
+}
+
 function KanbanBoard() {
     const [activeTask, setActiveTask] = useState<ITask | null>(null);
-    const [usersMoving, setUsersMoving] = useState<string[]>([]);
-    const [tasks, setTasks] = useState<TaskMap>({
-        TODO: [],
-        "IN PROGRESS": [],
-        HOLD: [],
-        REMOVE: [],
-        DONE: [],
-    });
+    const [usersMoving, setUsersMoving] = useState<IUserDrag[]>([]);
+    const { tasks ,setTasks,addTask} = useTaskStore()
     const [isOpen, setIsOpen] = useState(false);
     const [form, setForm] = useState<IForm>({
         name: "",
@@ -61,7 +61,7 @@ function KanbanBoard() {
 
     const { projectId: project_id } = useParams<{ projectId: string }>();
     const { user } = useUserStore();
-    
+
     const { token } = useUserTokenStore();
     const { data, error, isLoading } = useFetchTasks(token, project_id!);
     const addTaskMutation = useAddTask(token);
@@ -77,51 +77,52 @@ function KanbanBoard() {
                 console.log(payload)
                 console.log(user.username)
                 if (payload.type == "TASK_DRAG_START") {
-                    console.log("object")
-                    setUsersMoving((prev) => {
-                        // const filtered = prev.filter((u) => u !== payload.username);
-                        return [...prev, payload.username];
-                    });
-                    setTimeout(() => {
-                        setUsersMoving((prev) => prev.filter((u) => u !== payload.username));
-                    }, 4000);
-                }  if (payload.type == "TASK_DRAG_END") {
-                    console.log(user.username,payload.username)
+                    console.log(user.username, payload.username)
+                    if (payload.username !== user.username) {
+                        setUsersMoving((prev) => [...prev, { taskId: payload.taskId, username: payload.username }]);
+
+                        setTimeout(() => {
+                            setUsersMoving((prev) =>
+                                prev.filter((u) => !(u.username === payload.username && u.taskId === payload.taskId))
+                            );
+                        }, 4000);
+                    }
+
+                } if (payload.type == "TASK_DRAG_END") {
+                    console.log(user.username, payload.username)
                     // if (user.username !== payload.username) {
-                        console.log(payload)
-                        console.log("object")
-        
-                        const index = payload.index;
-                        const toStatus = payload.toStatus;
-                        const taskId = payload.taskId;
-                        
-                        setTasks((prev)=>{
-                            let movedTask: ITask | undefined;
-                         
-                            const newState = Object.fromEntries(
-                                Object.entries(prev).map(([col, list]) => {
-                                    const filtered = list.filter((task) => {
-                                        if (task.id === taskId) {
-                                            movedTask = { ...task };
-                                            return false; // Remove the task
-                                        }
-                                        return true;
-                                    });
-                                    return [col, filtered];
-                                })
-                            ) as TaskMap;
+                    console.log(payload)
+                    console.log("object")
 
-                            if (movedTask) {
-                                movedTask.status = toStatus;
-                                movedTask.orderIndex = index;
+                    const index = payload.index;
+                    const toStatus = payload.toStatus;
+                    const taskId = payload.taskId;
 
-                                newState[toStatus] = [...(newState[toStatus] || []), movedTask].sort(
-                                    (a, b) => a.orderIndex - b.orderIndex
-                                );
-                            }
+                    let movedTask: ITask | undefined;
 
-                            return newState;
+                    const newState = Object.fromEntries(
+                        Object.entries(tasks).map(([col, list]) => {
+                            const filtered = list.filter((task) => {
+                                if (task.id === taskId) {
+                                    movedTask = { ...task };
+                                    return false; // Remove the task
+                                }
+                                return true;
+                            });
+                            return [col, filtered];
                         })
+                    ) as TaskMap;
+
+                    if (movedTask) {
+                        movedTask.status = toStatus;
+                        movedTask.orderIndex = index;
+
+                        newState[toStatus] = [...(newState[toStatus] || []), movedTask].sort(
+                            (a, b) => a.orderIndex - b.orderIndex
+                        );
+                    }
+
+                    setTasks(newState)
                     // }
 
                 }
@@ -162,7 +163,7 @@ function KanbanBoard() {
             status: "TODO" | "IN_PROGRESS" | "HOLD" | "REMOVE" | "DONE";
             priority: "LOW" | "MEDIUM" | "HIGH";
             orderIndex: number;
-            due: string; 
+            due: string;
             projectId: string; // UUID
         }
         const toSend: ITaskSend = {
@@ -182,10 +183,7 @@ function KanbanBoard() {
 
         try {
             const savedTask = await addTaskMutation.mutateAsync(toSend);
-            setTasks((prev) => ({
-                ...prev,
-                [form.status]: [...prev[form.status], savedTask],
-            }));
+            addTask(savedTask);
             toast.success("Task added successfully")
         } catch (err: any) {
             console.error("❌ Error adding task:", err);
@@ -225,7 +223,7 @@ function KanbanBoard() {
             toStatus = over.id.toString();
         }
 
-        if (!toStatus || fromStatus === toStatus) return;
+        // if (fromStatus === toStatus) return;
 
         const stompClient = getStompClient();
         stompClient.publish({
@@ -238,54 +236,52 @@ function KanbanBoard() {
             }),
         });
 
-        setTasks((prev) => {
-            const updated = { ...prev };
-            const taskToMove = { ...activeTask, status: toStatus! };
-            updated[fromStatus] = updated[fromStatus].filter((t) => t.id !== active.id);
-            updated[toStatus!] = [...updated[toStatus!], taskToMove];
-            return updated;
-        });
+        const updated = { ...tasks };
+        const taskToMove = { ...activeTask, status: toStatus! };
+        updated[fromStatus] = updated[fromStatus].filter((t) => t.id !== active.id);
+        updated[toStatus!] = [...updated[toStatus!], taskToMove];
+        setTasks(updated);
 
-        setActiveTask({ ...activeTask, status: toStatus });
+        setActiveTask({ ...activeTask, status: toStatus! });
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || !activeTask) {
-        setActiveTask(null);
-        return;
-    }
-    const stompClient = getStompClient();
-
-    const fromColumn = activeTask.status;
-    let toColumn: string | undefined = undefined;
-    let toIndex: number | null = null;
-
-    // Step 1: Try to identify if dropped on a task
-    for (const status in tasks) {
-        const idx = tasks[status].findIndex((t) => t.id === over.id);
-        if (idx !== -1) {
-            toColumn = status;
-            toIndex = idx;
-            break;
+        const { active, over } = event;
+        if (!over || !activeTask) {
+            setActiveTask(null);
+            return;
         }
-    }
+        const stompClient = getStompClient();
 
-    // Step 2: If dropped on column itself (empty column), fallback
-    if (!toColumn) {
-        toColumn = over.id.toString();
-        toIndex = 0; // add to bottom
-    }
+        const fromColumn = activeTask.status;
+        let toColumn: string | undefined = undefined;
+        let toIndex: number | null = null;
 
-    if (!toColumn || !tasks[toColumn]) {
-        setActiveTask(null);
-        return;
-    }
+        // Step 1: Try to identify if dropped on a task
+        for (const status in tasks) {
+            const idx = tasks[status].findIndex((t) => t.id === over.id);
+            if (idx !== -1) {
+                toColumn = status;
+                toIndex = idx;
+                break;
+            }
+        }
 
-    // 🔄 SAME COLUMN REORDER
-    if (fromColumn === toColumn) {
-        setTasks((prev) => {
-            const list = [...prev[toColumn]];
+        // Step 2: If dropped on column itself (empty column), fallback
+        if (!toColumn) {
+            toColumn = over.id.toString();
+            toIndex = 0; // add to bottom
+        }
+
+        if (!toColumn || !tasks[toColumn]) {
+            setActiveTask(null);
+            return;
+        }
+
+        // 🔄 SAME COLUMN REORDER
+        if (fromColumn === toColumn) {
+
+            const list = [...tasks[toColumn]];
             const taskIndex = list.findIndex((t) => t.id === active.id);
 
             // Remove the dragged task
@@ -327,19 +323,17 @@ function KanbanBoard() {
                     index: newOrderIndex,
                     taskId: activeTask.id,
                     toStatus: toColumn,
-                    username:user.username
+                    username: user.username
                 }),
             });
+            setTasks({ ...tasks, [fromColumn]: list });
+            
+        }
 
-            return { ...prev, [fromColumn]: list };
-        });
-    }
-
-    // 🔁 MOVED TO NEW COLUMN
-    else {
-        setTasks((prev) => {
-            const fromList = prev[fromColumn].filter((t) => t.id !== active.id);
-            const toList = [...prev[toColumn!]];
+        // 🔁 MOVED TO NEW COLUMN
+        else {
+            const fromList = tasks[fromColumn].filter((t) => t.id !== active.id);
+            const toList = [...tasks[toColumn!]];
             const moved = { ...activeTask, status: toColumn! };
 
             if (toIndex !== null) {
@@ -381,19 +375,17 @@ function KanbanBoard() {
                     username: user.username
                 }),
             });
+            setTasks({...tasks, [fromColumn]: fromList, [toColumn]: toList});
+        }
 
-            return { ...prev, [fromColumn]: fromList, [toColumn]: toList };
-        });
-    }
-
-    setActiveTask(null);
-};
+        setActiveTask(null);
+    };
 
 
     return (
         <>
             <div className="p-4 md:p-6 bg-white min-h-screen relative">
-                <Header usersMoving={usersMoving} user={user} />
+                <Header />
 
                 <DndContext
                     onDragStart={handleDragStart}
@@ -408,7 +400,7 @@ function KanbanBoard() {
                                 <div className={`px-4 py-3 font-semibold text-sm uppercase ${col.label} bg-gray-100 sticky top-0 z-10 border-b`}>
                                     {col.title}
                                 </div>
-                                <Tasks tasks={tasks} col={col} />
+                                <Tasks col={col} usersMoving={usersMoving} />
                             </div>
                         ))}
                     </div>

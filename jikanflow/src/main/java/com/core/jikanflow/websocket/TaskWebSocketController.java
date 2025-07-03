@@ -43,7 +43,8 @@ public class TaskWebSocketController {
         messagingTemplate.convertAndSend("/topic/project/" + projectId,  Map.of(
                 "message", "Moving to "+ taskResDto.getName() + " by " + username ,
                 "username",username,
-                "type","TASK_DRAG_START")
+                "type","TASK_DRAG_START",
+                "taskId",taskId)
         );
     }
 
@@ -72,6 +73,11 @@ public class TaskWebSocketController {
                         "taskId",removableTaskId
                 )
         );
+    }
+
+    @MessageMapping("/task-delete")
+    public void deleteTasks(){
+        
     }
 
 }

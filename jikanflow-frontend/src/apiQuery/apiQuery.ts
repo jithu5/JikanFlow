@@ -137,3 +137,6 @@ export const useFetchUserData = (token: string)=>{
 }
 
 // Mutation (UPDATION) Queries
+
+
+// Mutation (DELETION) Queries

@@ -1,18 +1,24 @@
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import type { TaskMap } from './KanbanBoard';
 import TaskList from './TaskList';
 import { useDroppable } from '@dnd-kit/core';
+import useTaskStore from '@/store/Task';
+
+interface IUserDrag {
+    taskId: string;
+    username: string;
+}
 
 interface Props {
-    tasks: TaskMap;
     col: {
         title: string;
         color: string;
         label: string;
     };
+    usersMoving :IUserDrag[]
 }
 
-function Tasks({ tasks, col }: Props) {
+function Tasks({  col,usersMoving }: Props) {
+    const {tasks} = useTaskStore()
     const taskList = tasks[col.title] || [];
     const { setNodeRef } = useDroppable({
         id: col.title, // this is what `over.id` will be during a drop over empty column
@@ -34,6 +40,7 @@ function Tasks({ tasks, col }: Props) {
                                 id: String(task.id),
                                 color: col.color
                             }}
+                            usersMoving={usersMoving}
                         />
                     ))}
 
