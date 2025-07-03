@@ -1,4 +1,6 @@
+import { getStompClient } from '@/lib/socket';
 import useTaskStore from '@/store/Task';
+import useUserStore from '@/store/user';
 import useUserTokenStore from '@/store/userToken';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -30,13 +32,13 @@ interface IUserDrag {
 
 interface Props {
     task: Task;
-    usersMoving: IUserDrag[]; // 👈 New prop
+    usersMoving: IUserDrag[];
+    project_id:string // 👈 New prop
 }
 
-function TaskList({ task, usersMoving }: Props) {
+function TaskList({ task, usersMoving,project_id }: Props) {
     const { setNodeRef, attributes, listeners, transform, transition } = useSortable({ id: task.id });
-    const { removeTask } = useTaskStore()
-    const { token } = useUserTokenStore()
+    const {user} = useUserStore()
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -49,8 +51,16 @@ function TaskList({ task, usersMoving }: Props) {
     const handleEdit = () => alert(`Edit task: ${task.name}`);
     const handleDelete = async (id: string) => {
         try {
-      
-            removeTask(id)
+            const stompClient = getStompClient();
+                    stompClient.publish({
+                        destination: "/app/task-deleted",
+                        body: JSON.stringify({
+                            type: "TASK_DRAG_START",
+                            username: user.username,
+                            projectId: project_id,
+                            taskId: id,
+                        }),
+                    });
         } catch (error) {
             // toast.error(error)
         }

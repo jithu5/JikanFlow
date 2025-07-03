@@ -30,6 +30,7 @@ const useTaskStore = create<ITaskStore>((set) => ({
         Object.keys(updatedTasks).forEach((key) => {
             updatedTasks[key] = updatedTasks[key].filter(task => task.id !== taskId);
         });
+        console.log(updatedTasks)
         return { tasks: updatedTasks };
     }),
 }));

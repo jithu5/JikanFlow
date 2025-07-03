@@ -21,4 +21,6 @@ public class TaskReqDto {
     private LocalDate due;
 
     private UUID projectId;
+
+    private String username;
 }

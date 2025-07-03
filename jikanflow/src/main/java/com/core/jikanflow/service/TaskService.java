@@ -11,6 +11,8 @@ import com.core.jikanflow.responseDTOS.NoteResDto;
 import com.core.jikanflow.responseDTOS.TaskResDto;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -23,12 +25,14 @@ import java.util.UUID;
 @Service
 @AllArgsConstructor
 public class TaskService {
+    private static final Logger log = LoggerFactory.getLogger(TaskService.class);
     private final TaskRepo taskRepo;
     private final UserRepo userRepo;
     private final ProjectRepo projectRepo;
 
-    public TaskResDto createNewTask(TaskReqDto newTask) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    @Transactional
+    public TaskResDto createNewTask(TaskReqDto newTask, Principal principal) {
+        String username = principal.getName();
         User user = userRepo.findByUsername(username).orElseThrow(
                 () -> new UsernameNotFoundException("User not found")
         );
@@ -36,8 +40,8 @@ public class TaskService {
         Project project = projectRepo.findById(newTask.getProjectId()).orElseThrow(
                 ()-> new RuntimeException("Project not found")
         );
-
-        if (user.getId().equals(project.getCreatedBy().getId())){
+    log.info("Going to create");
+        if (project.getUsers().stream().anyMatch(u-> u.getId().equals(user.getId()))){
             Task task = new Task();
             task.setName(newTask.getName());
             task.setDescription(newTask.getDescription());
@@ -202,7 +206,21 @@ public class TaskService {
         return taskResDto;
     }
 
-    public void deleteTaskById(UUID taskId) {
+    @Transactional
+    public void deleteTaskById(UUID taskId, Principal principal, UUID projectId) {
+
+        String username = principal.getName();
+        User user = userRepo.findByUsername(username).orElseThrow(
+                ()-> new UsernameNotFoundException("User not found")
+        );
+        Project project = projectRepo.findById(projectId).orElseThrow(
+                ()-> new RuntimeException("Project not found")
+        );
+
+        if (project.getUsers().stream().noneMatch(u-> u.getId().equals(user.getId()))){
+            throw new RuntimeException("Unauthorized");
+        }
+
         taskRepo.deleteById(taskId);
     }
 }

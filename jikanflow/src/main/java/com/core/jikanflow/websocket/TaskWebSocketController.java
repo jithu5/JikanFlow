@@ -1,7 +1,9 @@
 package com.core.jikanflow.websocket;
 
 import com.core.jikanflow.entities.User;
+import com.core.jikanflow.requestDTOS.KanbanTaskDeleteReqDto;
 import com.core.jikanflow.requestDTOS.KanbanUpdateReqDto;
+import com.core.jikanflow.requestDTOS.TaskReqDto;
 import com.core.jikanflow.requestDTOS.UpdateTaskReqDto;
 import com.core.jikanflow.responseDTOS.ProjectResDto;
 import com.core.jikanflow.responseDTOS.TaskResDto;
@@ -9,6 +11,7 @@ import com.core.jikanflow.service.ProjectService;
 import com.core.jikanflow.service.TaskService;
 import com.core.jikanflow.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
@@ -27,6 +30,19 @@ public class TaskWebSocketController {
     private final SimpMessagingTemplate messagingTemplate;
     private final UserService userService;
 
+    @MessageMapping("/task-created")
+    public void addTasks(TaskReqDto newTask, Principal principal){
+
+        UUID projectId = newTask.getProjectId();
+        String username = newTask.getUsername();
+        TaskResDto savedTask = taskService.createNewTask(newTask, principal);
+
+        messagingTemplate.convertAndSend("/topic/project/"+ projectId, Map.of(
+                "type","TASK_ADDED",
+                "username",username,
+                "newTask",savedTask
+        ));
+    }
 
     @MessageMapping("/task-drag-started")
     public void handleTaskBeingDragged(Map<String, Object> message, Principal principal) {
@@ -75,9 +91,20 @@ public class TaskWebSocketController {
         );
     }
 
-    @MessageMapping("/task-delete")
-    public void deleteTasks(){
-        
+    @MessageMapping("/task-deleted")
+    public void deleteTasks(KanbanTaskDeleteReqDto kanbanTaskDeleteReqDto, Principal principal){
+
+        UUID taskId = kanbanTaskDeleteReqDto.getTaskId();
+        String username = kanbanTaskDeleteReqDto.getUsername();
+        UUID projectId = kanbanTaskDeleteReqDto.getProjectId();
+
+        taskService.deleteTaskById(taskId, principal, projectId);
+
+        messagingTemplate.convertAndSend("/topic/project/" + projectId, Map.of(
+                "type","TASK_DELETED",
+                "username",username,
+                "taskId",taskId
+        ));
     }
 
 }

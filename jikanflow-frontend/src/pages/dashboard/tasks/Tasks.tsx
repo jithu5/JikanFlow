@@ -15,9 +15,10 @@ interface Props {
         label: string;
     };
     usersMoving :IUserDrag[]
+    project_id: string
 }
 
-function Tasks({  col,usersMoving }: Props) {
+function Tasks({  col,usersMoving ,project_id}: Props) {
     const {tasks} = useTaskStore()
     const taskList = tasks[col.title] || [];
     const { setNodeRef } = useDroppable({
@@ -41,6 +42,7 @@ function Tasks({  col,usersMoving }: Props) {
                                 color: col.color
                             }}
                             usersMoving={usersMoving}
+                            project_id={project_id}
                         />
                     ))}
 

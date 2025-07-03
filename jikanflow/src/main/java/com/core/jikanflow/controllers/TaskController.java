@@ -17,16 +17,6 @@ public class TaskController {
 
     private final TaskService taskService;
 
-    @PostMapping("/create")
-    public ResponseEntity<?> createTask(@RequestBody TaskReqDto newTask){
-        try {
-            TaskResDto savedTask = taskService.createNewTask(newTask);
-            return ResponseEntity.accepted().body(savedTask);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(e.getMessage());
-        }
-    }
-
     @GetMapping("/get/{taskId}")
     public ResponseEntity<?> getTaskById(@PathVariable UUID taskId){
         try {

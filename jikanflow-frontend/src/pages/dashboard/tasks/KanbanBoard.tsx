@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PlusCircle } from "lucide-react";
 import {
     DndContext,
@@ -15,7 +15,7 @@ import Tasks from "./Tasks";
 import AddTask from "./AddTask";
 import { getStompClient } from "../../../lib/socket";
 import { useParams } from "react-router-dom";
-import { useAddTask, useFetchTasks } from "@/apiQuery/apiQuery";
+import { useFetchTasks } from "@/apiQuery/apiQuery";
 import useUserTokenStore from "@/store/userToken";
 import toast from "react-hot-toast";
 import useUserStore from "@/store/user";
@@ -49,7 +49,7 @@ interface IUserDrag {
 function KanbanBoard() {
     const [activeTask, setActiveTask] = useState<ITask | null>(null);
     const [usersMoving, setUsersMoving] = useState<IUserDrag[]>([]);
-    const { tasks ,setTasks,addTask} = useTaskStore()
+    const { tasks, setTasks, addTask, removeTask } = useTaskStore()
     const [isOpen, setIsOpen] = useState(false);
     const [form, setForm] = useState<IForm>({
         name: "",
@@ -64,9 +64,11 @@ function KanbanBoard() {
 
     const { token } = useUserTokenStore();
     const { data, error, isLoading } = useFetchTasks(token, project_id!);
-    const addTaskMutation = useAddTask(token);
 
-    console.log(user)
+    const tasksRef = useRef(tasks);
+    useEffect(() => {
+        tasksRef.current = tasks;
+    }, [tasks]);
 
     useEffect(() => {
         const client = getStompClient();
@@ -74,57 +76,60 @@ function KanbanBoard() {
             console.log("🟢 STOMP connected");
             client.subscribe(`/topic/project/${project_id}`, (message) => {
                 const payload = JSON.parse(message.body);
-                console.log(payload)
-                console.log(user.username)
-                if (payload.type == "TASK_DRAG_START") {
-                    console.log(user.username, payload.username)
-                    if (payload.username !== user.username) {
-                        setUsersMoving((prev) => [...prev, { taskId: payload.taskId, username: payload.username }]);
+                console.log(user)
+                if (payload.type == "TASK_ADDED") {
+                    addTask(payload.newTask)
+                } if (payload.type == "TASK_DRAG_START") {
+                    // if (payload.username !== user.username) {
+                    setUsersMoving((prev) => [...prev, { taskId: payload.taskId, username: payload.username }]);
 
-                        setTimeout(() => {
-                            setUsersMoving((prev) =>
-                                prev.filter((u) => !(u.username === payload.username && u.taskId === payload.taskId))
-                            );
-                        }, 4000);
-                    }
-
-                } if (payload.type == "TASK_DRAG_END") {
-                    console.log(user.username, payload.username)
-                    // if (user.username !== payload.username) {
-                    console.log(payload)
-                    console.log("object")
-
-                    const index = payload.index;
-                    const toStatus = payload.toStatus;
-                    const taskId = payload.taskId;
-
-                    let movedTask: ITask | undefined;
-
-                    const newState = Object.fromEntries(
-                        Object.entries(tasks).map(([col, list]) => {
-                            const filtered = list.filter((task) => {
-                                if (task.id === taskId) {
-                                    movedTask = { ...task };
-                                    return false; // Remove the task
-                                }
-                                return true;
-                            });
-                            return [col, filtered];
-                        })
-                    ) as TaskMap;
-
-                    if (movedTask) {
-                        movedTask.status = toStatus;
-                        movedTask.orderIndex = index;
-
-                        newState[toStatus] = [...(newState[toStatus] || []), movedTask].sort(
-                            (a, b) => a.orderIndex - b.orderIndex
+                    setTimeout(() => {
+                        setUsersMoving((prev) =>
+                            prev.filter((u) => !(u.username === payload.username && u.taskId === payload.taskId))
                         );
-                    }
-
-                    setTasks(newState)
+                    }, 4000);
                     // }
 
+                } if (payload.type == "TASK_DRAG_END") {
+                    console.log(user)
+                    console.log(payload.username)
+                    if (user.username != payload.username) {
+                        console.log("heyyy")
+                        const index = payload.index;
+                        const toStatus = payload.toStatus;
+                        const taskId = payload.taskId;
+
+                        let movedTask: ITask | undefined;
+                        console.log(tasksRef.current)
+                        const newState = Object.fromEntries(
+                            Object.entries(tasksRef.current).map(([col, list]) => {
+                                const filtered = list.filter((task) => {
+                                    if (task.id === taskId) {
+                                        movedTask = { ...task };
+                                        return false;
+                                    }
+                                    return true;
+                                });
+                                return [col, filtered]; // ✅ Important: return [key, value]
+                            })
+                        ) as TaskMap;
+                        console.log(movedTask)
+
+                        if (movedTask) {
+                            movedTask.status = toStatus;
+                            movedTask.orderIndex = index;
+
+                            newState[toStatus] = [...(newState[toStatus] || []), movedTask].sort(
+                                (a, b) => a.orderIndex - b.orderIndex
+                            );
+                        }
+                        setTasks(newState)
+                    }
+                    console.log(tasks)
+
+                } else if (payload.type == "TASK_DELETED") {
+                    const { taskId } = payload;
+                    removeTask(taskId);
                 }
             });
         };
@@ -157,37 +162,33 @@ function KanbanBoard() {
     ];
 
     const handleAddTask = async () => {
-        interface ITaskSend {
-            name: string;
-            description: string;
-            status: "TODO" | "IN_PROGRESS" | "HOLD" | "REMOVE" | "DONE";
-            priority: "LOW" | "MEDIUM" | "HIGH";
-            orderIndex: number;
-            due: string;
-            projectId: string; // UUID
-        }
-        const toSend: ITaskSend = {
-            ...form,
-            orderIndex: tasks[form.status].length * 100,
-            projectId: project_id ?? "",
-            status: form.status === "IN PROGRESS" ? "IN_PROGRESS"
-                : form.status === "TODO" ? "TODO"
-                    : form.status === "HOLD" ? "HOLD"
-                        : form.status === "REMOVE" ? "REMOVE"
-                            : form.status === "DONE" ? "DONE"
-                                : "TODO",
-            name: form.name,
-            priority: form.priority as "MEDIUM" | "LOW" | "HIGH",
-            due: form.due,
-        };
 
         try {
-            const savedTask = await addTaskMutation.mutateAsync(toSend);
-            addTask(savedTask);
+            const stompClient = getStompClient();
+            const currLastTask = tasks[form.status][tasks[form.status].length]
+            stompClient.publish({
+                destination: "/app/task-created",
+                body: JSON.stringify({
+                    orderIndex: currLastTask?.orderIndex ? currLastTask.orderIndex + 100 : 0,
+                    projectId: project_id ?? "",
+                    status: form.status === "IN PROGRESS" ? "IN_PROGRESS"
+                        : form.status === "TODO" ? "TODO"
+                            : form.status === "HOLD" ? "HOLD"
+                                : form.status === "REMOVE" ? "REMOVE"
+                                    : form.status === "DONE" ? "DONE"
+                                        : "TODO",
+                    name: form.name,
+                    priority: form.priority as "MEDIUM" | "LOW" | "HIGH",
+                    due: form.due,
+                    description: form.description,
+                    username: user.username
+                }),
+            });
+
             toast.success("Task added successfully")
         } catch (err: any) {
             console.error("❌ Error adding task:", err);
-            toast.error(err?.response?.data)
+            toast.error(err)
         }
 
         setForm({ name: "", description: "", status: "TODO", due: "", priority: "MEDIUM" });
@@ -327,7 +328,7 @@ function KanbanBoard() {
                 }),
             });
             setTasks({ ...tasks, [fromColumn]: list });
-            
+
         }
 
         // 🔁 MOVED TO NEW COLUMN
@@ -375,7 +376,7 @@ function KanbanBoard() {
                     username: user.username
                 }),
             });
-            setTasks({...tasks, [fromColumn]: fromList, [toColumn]: toList});
+            setTasks({ ...tasks, [fromColumn]: fromList, [toColumn]: toList });
         }
 
         setActiveTask(null);
@@ -400,7 +401,7 @@ function KanbanBoard() {
                                 <div className={`px-4 py-3 font-semibold text-sm uppercase ${col.label} bg-gray-100 sticky top-0 z-10 border-b`}>
                                     {col.title}
                                 </div>
-                                <Tasks col={col} usersMoving={usersMoving} />
+                                <Tasks col={col} usersMoving={usersMoving} project_id={project_id!} />
                             </div>
                         ))}
                     </div>
