@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 // Removed manual destructuring of Request and Response to avoid redeclaration error
 
 const app = express();
-const PORT = 4002;
+const PORT = 4001;
 
 app.use(express.json());
 
