@@ -37,5 +37,36 @@ public class NotesController {
         }
     }
 
+    @PatchMapping("/pin/{noteId}")
+    public ResponseEntity<?> updatePin(@PathVariable UUID noteId){
+        try {
+            notesService.updatePin(noteId);
+            return ResponseEntity.ok().body("Pinned successfully");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/delete/{noteId}")
+    public ResponseEntity<?> deleteNoteById(@PathVariable UUID noteId){
+        try {
+            notesService.deleteNoteById(noteId);
+            return ResponseEntity.ok().body("Note deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/update/{noteId}")
+    public ResponseEntity<?> updateNoteById(@PathVariable UUID noteId,
+                                            @RequestBody NotesReqDto updateNote){
+        try {
+            notesService.updateNoteById(noteId, updateNote);
+            return ResponseEntity.accepted().body("Note updated successfully");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
 
 }

@@ -192,7 +192,7 @@ public class TaskService {
         taskResDto.setPriority(task.getPriority());
         taskResDto.setOrderIndex(task.getOrderIndex());
         taskResDto.setDue(task.getDue());
-        task.setCreatedAt(task.getCreatedAt());
+        taskResDto.setCreatedAt(task.getCreatedAt());
         taskResDto.setNotes(task.getNotes().stream().map( n ->{
                     NoteResDto noteResDto = new NoteResDto();
 
