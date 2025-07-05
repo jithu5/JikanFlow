@@ -89,7 +89,7 @@ public class TaskService {
         taskResDto.setPriority(task.getPriority());
         taskResDto.setOrderIndex(task.getOrderIndex());
         taskResDto.setDue(task.getDue());
-        task.setCreatedAt(task.getCreatedAt());
+        taskResDto.setCreatedAt(task.getCreatedAt());
         taskResDto.setNotes(task.getNotes().stream().map( n ->{
             NoteResDto noteResDto = new NoteResDto();
 
@@ -97,6 +97,7 @@ public class TaskService {
             noteResDto.setSubject(n.getSubject());
             noteResDto.setBody(n.getBody());
             noteResDto.setCreatedAt(n.getCreatedAt());
+            noteResDto.setPinned(n.isPinned());
 
             return noteResDto;
         }).toList()

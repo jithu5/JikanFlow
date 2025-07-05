@@ -1,0 +1,55 @@
+package com.core.jikanflow.service;
+
+import com.core.jikanflow.entities.Note;
+import com.core.jikanflow.entities.Project;
+import com.core.jikanflow.entities.Task;
+import com.core.jikanflow.entities.User;
+import com.core.jikanflow.repository.NoteRepo;
+import com.core.jikanflow.repository.ProjectRepo;
+import com.core.jikanflow.repository.TaskRepo;
+import com.core.jikanflow.repository.UserRepo;
+import com.core.jikanflow.requestDTOS.NotesReqDto;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class NotesService {
+
+    private final NoteRepo noteRepo;
+    private final UserRepo userRepo;
+    private final ProjectRepo projectRepo;
+    private final TaskRepo taskRepo;
+
+    public void createNewNote(NotesReqDto newNote) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepo.findByUsername(username).orElseThrow(
+                ()-> new UsernameNotFoundException("User not found")
+        );
+
+        Project project = projectRepo.findById(newNote.getProjectId()).orElseThrow(
+                ()-> new RuntimeException("Project not found")
+        );
+
+        Task task = taskRepo.findById(newNote.getTaskId()).orElseThrow(
+                ()-> new RuntimeException("Task not found")
+        );
+
+        if (project.getUsers().stream().noneMatch(u-> u.getId().equals(user.getId()))){
+            throw new RuntimeException("Unauthorized");
+        }
+
+        Note note = new Note();
+
+        note.setSubject(newNote.getSubject());
+        note.setBody(newNote.getBody());
+        note.setPinned(false);
+        note.setTask(task);
+        note.setProject(project);
+        note.setUser(user);
+
+        noteRepo.save(note);
+    }
+}

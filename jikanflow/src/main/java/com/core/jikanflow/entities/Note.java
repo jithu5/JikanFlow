@@ -29,6 +29,9 @@ public class Note {
     @Size(max = 200, message = "Body can be at most 200 characters")
     private String body;
 
+    @Column(name = "is_pinned")
+    private boolean isPinned;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

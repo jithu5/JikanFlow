@@ -11,4 +11,5 @@ public class NoteResDto {
     private String subject;
     private String body;
     private LocalDateTime createdAt;
+    private boolean isPinned;
 }
