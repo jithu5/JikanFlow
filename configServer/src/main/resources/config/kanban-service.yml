@@ -4,6 +4,7 @@ spring:
     username: postgres
     password: 119201
     driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -19,3 +20,8 @@ server:
 jwt:
   secret: YjBhZDdiZGJhOTE0MDg1NWViNDcyMzEyOTJkM2I4NzFjOTdiNDc2ZDE3OTc2MjZkZDgyYWIwZWMyOTlmZGNiMQ==
 
+management:
+  endpoints:
+    web:
+      exposure:
+        exclude: "*"

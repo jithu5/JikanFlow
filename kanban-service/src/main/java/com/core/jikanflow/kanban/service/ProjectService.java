@@ -9,7 +9,7 @@ import com.core.jikanflow.kanban.responseDTOS.NoteResDto;
 import com.core.jikanflow.kanban.responseDTOS.ProjectResDto;
 import com.core.jikanflow.kanban.responseDTOS.TaskResDto;
 import com.core.jikanflow.kanban.responseDTOS.UserResDto;
-import com.core.jikanflow.responseDTOS.*;
+import com.core.jikanflow.kanban.responseDTOS.*;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;

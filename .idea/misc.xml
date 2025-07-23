@@ -6,6 +6,9 @@
       <list>
         <option value="$PROJECT_DIR$/jikanflow/pom.xml" />
         <option value="$PROJECT_DIR$/jikanflow-user/pom.xml" />
+        <option value="$PROJECT_DIR$/configServer/pom.xml" />
+        <option value="$PROJECT_DIR$/jikanflow-kanban/pom.xml" />
+        <option value="$PROJECT_DIR$/kanban-service/pom.xml" />
       </list>
     </option>
   </component>

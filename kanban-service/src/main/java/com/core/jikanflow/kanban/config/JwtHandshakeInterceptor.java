@@ -21,7 +21,7 @@ import java.util.Map;
 public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(JwtHandshakeInterceptor.class);
-    private final JwtUtils jwtUtils;
+    private final com.core.jikanflow.kanban.config.JwtUtils jwtUtils;
     private final UserService userService;
 
     @Override

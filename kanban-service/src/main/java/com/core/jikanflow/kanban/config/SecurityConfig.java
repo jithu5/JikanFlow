@@ -1,7 +1,7 @@
 package com.core.jikanflow.kanban.config;
 
 import com.core.jikanflow.kanban.service.UserDetailsServiceImpl;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,13 +20,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Autowired
-    private UserDetailsServiceImpl userDetailsService;
+    private final UserDetailsServiceImpl userDetailsService;
 
     @Bean
-    public JwtConfig jwtAuthFilter(){
+    public com.core.jikanflow.kanban.config.JwtConfig jwtAuthFilter(){
         return new JwtConfig();
     }
 

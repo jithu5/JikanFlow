@@ -4,5 +4,11 @@ spring:
       uri: mongodb://localhost:27017/jikanflow-user
       database: jikanflow-user
 
+management:
+  endpoints:
+    web:
+      exposure:
+        exclude: "*"
+
 server:
-  port: 4041
+  port: 4001
