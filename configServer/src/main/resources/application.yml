@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: configServer
+
+  profiles:
+    active: native
+
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: file:///C:/Users/ABIJITH/Desktop/JikanFlow/configServer/src/main/resources/config
+server:
+  port: 8888

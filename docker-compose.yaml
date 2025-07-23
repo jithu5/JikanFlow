@@ -19,9 +19,9 @@ services:
     networks:
       - backend
 
-  jikanflow-notifications:
+  jikanflow-user:
     build:
-      context: ./jikanflow-notifications
+      context: ./jikanflow-user
       dockerfile: Dockerfile
     ports:
       - "4001:4001"
@@ -46,24 +46,6 @@ services:
     networks:
       - backend
 
-  postgres:
-    image: postgres:15
-    container_name: postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: jikanflow
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 119201
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    networks:
-      - backend
-
-
 networks:
   backend:
     driver: bridge
-volumes:
-  pgdata:
